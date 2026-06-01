@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 421c4a08c01a9794bb7cf1a9382e8c54, type: 3}
+  m_Name: Path_Tile
+  m_EditorClassIdentifier: Assembly-CSharp::PathTile
+  m_DefaultSprite: {fileID: -5111575295794188215, guid: 2afd1fd2be90d0044a83cd4b14579c2d, type: 3}
+  m_DefaultGameObject: {fileID: 0}
+  m_DefaultColliderType: 1
+  m_TilingRules: []
+  wall_tiles:
+  - {fileID: 11400000, guid: aa30c3be97fc8a646affbc579401cf98, type: 2}
