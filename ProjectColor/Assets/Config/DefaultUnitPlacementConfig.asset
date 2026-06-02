@@ -146,8 +146,8 @@ MonoBehaviour:
     unitTeam: -1
     unitPrefab: {fileID: 0}
   - cellPosition: {x: 3, y: 8}
-    unitTeam: -1
-    unitPrefab: {fileID: 0}
+    unitTeam: 1
+    unitPrefab: {fileID: 800200000001, guid: db2bb2299309cfd4a9253dd11b9e03e0, type: 3}
   - cellPosition: {x: 3, y: 9}
     unitTeam: -1
     unitPrefab: {fileID: 0}
@@ -164,8 +164,8 @@ MonoBehaviour:
     unitTeam: -1
     unitPrefab: {fileID: 0}
   - cellPosition: {x: 4, y: 2}
-    unitTeam: -1
-    unitPrefab: {fileID: 0}
+    unitTeam: 0
+    unitPrefab: {fileID: 800100000001, guid: a416b7a48de88df45a4089c9cd0286c1, type: 3}
   - cellPosition: {x: 4, y: 3}
     unitTeam: -1
     unitPrefab: {fileID: 0}
@@ -203,8 +203,8 @@ MonoBehaviour:
     unitTeam: -1
     unitPrefab: {fileID: 0}
   - cellPosition: {x: 5, y: 3}
-    unitTeam: -1
-    unitPrefab: {fileID: 0}
+    unitTeam: 3
+    unitPrefab: {fileID: 800300000001, guid: 489c621f566ccff4382e719f8e8110c1, type: 3}
   - cellPosition: {x: 5, y: 4}
     unitTeam: -1
     unitPrefab: {fileID: 0}
@@ -218,8 +218,8 @@ MonoBehaviour:
     unitTeam: -1
     unitPrefab: {fileID: 0}
   - cellPosition: {x: 5, y: 8}
-    unitTeam: -1
-    unitPrefab: {fileID: 0}
+    unitTeam: 2
+    unitPrefab: {fileID: 800300000001, guid: 1ecff609d16bab7488266e8a1a4c6f91, type: 3}
   - cellPosition: {x: 5, y: 9}
     unitTeam: -1
     unitPrefab: {fileID: 0}

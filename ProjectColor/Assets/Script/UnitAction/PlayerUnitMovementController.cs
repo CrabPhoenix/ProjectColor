@@ -1,44 +1,23 @@
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// 负责玩家选中单位后的点击移动输入和每回合移动次数限制。
+/// 负责玩家选中单位后的点击移动输入和每阶段移动状态限制。
 /// </summary>
 public class PlayerUnitMovementController : MonoBehaviour
 {
     [SerializeField] private int moveRange = 2;
+    [SerializeField] private TurnPhaseCameraController cameraController;
 
     private Unit selectedUnit;
-    private readonly HashSet<Unit> movedUnits = new HashSet<Unit>();
-    private bool subscribedPhaseEvent;
+    private Coroutine cameraFollowCoroutine;
 
     /// <summary>
-    /// 尝试订阅回合阶段变化事件。
+    /// 初始化摄像机控制器引用。
     /// </summary>
-    private void OnEnable()
+    private void Awake()
     {
-        TrySubscribePhaseEvent();
-    }
-
-    /// <summary>
-    /// 启动时再次尝试订阅，处理 TurnManager 初始化顺序。
-    /// </summary>
-    private void Start()
-    {
-        TrySubscribePhaseEvent();
-    }
-
-    /// <summary>
-    /// 取消订阅回合阶段变化事件。
-    /// </summary>
-    private void OnDisable()
-    {
-        if(TurnManager.Instance != null && subscribedPhaseEvent)
-        {
-            TurnManager.Instance.OnPhaseChanged -= HandlePhaseChanged;
-        }
-
-        subscribedPhaseEvent = false;
+        ResolveCameraController();
     }
 
     /// <summary>
@@ -62,7 +41,10 @@ public class PlayerUnitMovementController : MonoBehaviour
     /// </summary>
     public bool CanUnitMoveThisPhase(Unit unit)
     {
-        return unit != null && unit.CanPlayerControl && unit.IsAlive && !movedUnits.Contains(unit);
+        if(unit == null || !unit.CanPlayerControl || !unit.IsAlive) return false;
+
+        UnitActionState actionState = unit.GetComponent<UnitActionState>();
+        return actionState == null || actionState.CanMove;
     }
 
     /// <summary>
@@ -75,34 +57,74 @@ public class PlayerUnitMovementController : MonoBehaviour
 
         GridCell targetCell = GridManager.Instance.GetCellFromWorldPosition(worldPosition);
         bool moved = selectedUnit.UnitMover.TryMoveToCell(targetCell, moveRange);
-        if(moved)
+        if(!moved) return false;
+
+        UnitActionState actionState = selectedUnit.GetComponent<UnitActionState>();
+        if(actionState != null)
         {
-            movedUnits.Add(selectedUnit);
-            ClearSelectedUnit();
+            actionState.MarkMoved();
         }
 
-        return moved;
+        FollowCameraWhileMoving(selectedUnit);
+        return true;
     }
 
     /// <summary>
-    /// 进入玩家阶段时重置所有玩家单位的移动次数。
+    /// 在单位移动期间让摄像机跟随单位并关闭玩家手动控制。
     /// </summary>
-    private void HandlePhaseChanged(TurnPhase phase)
+    private void FollowCameraWhileMoving(Unit unit)
     {
-        if(phase == TurnPhase.Player)
+        if(unit == null) return;
+
+        ResolveCameraController();
+        if(cameraController == null) return;
+
+        if(cameraFollowCoroutine != null)
         {
-            movedUnits.Clear();
+            StopCoroutine(cameraFollowCoroutine);
         }
+
+        cameraController.FollowUnit(unit);
+        cameraFollowCoroutine = StartCoroutine(StopCameraFollowAfterMove(unit));
     }
 
     /// <summary>
-    /// 尝试订阅回合阶段变化事件。
+    /// 等待单位移动结束后恢复玩家阶段的摄像机手动控制。
     /// </summary>
-    private void TrySubscribePhaseEvent()
+    private IEnumerator StopCameraFollowAfterMove(Unit unit)
     {
-        if(subscribedPhaseEvent || TurnManager.Instance == null) return;
+        UnitMover unitMover = unit != null ? unit.UnitMover : null;
+        while(unitMover != null && unitMover.IsMoving)
+        {
+            yield return null;
+        }
 
-        TurnManager.Instance.OnPhaseChanged += HandlePhaseChanged;
-        subscribedPhaseEvent = true;
+        if(cameraController != null && TurnManager.Instance != null && TurnManager.Instance.CurrentPhase == TurnPhase.Player)
+        {
+            cameraController.StopFollowing();
+            cameraController.SetManualControlEnabled(true);
+        }
+
+        cameraFollowCoroutine = null;
+    }
+
+    /// <summary>
+    /// 查找或创建回合摄像机控制器。
+    /// </summary>
+    private void ResolveCameraController()
+    {
+        if(cameraController != null) return;
+
+        cameraController = FindFirstObjectByType<TurnPhaseCameraController>();
+        if(cameraController != null) return;
+
+        Camera mainCamera = Camera.main;
+        if(mainCamera == null) return;
+
+        cameraController = mainCamera.GetComponent<TurnPhaseCameraController>();
+        if(cameraController == null)
+        {
+            cameraController = mainCamera.gameObject.AddComponent<TurnPhaseCameraController>();
+        }
     }
 }

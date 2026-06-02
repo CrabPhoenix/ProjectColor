@@ -74,13 +74,67 @@ public static class UnitMovementUtility
     /// </summary>
     public static bool IsCellInMoveRange(Unit unit, GridCell currentCell, GridCell targetCell, int maxMoveDistance)
     {
-        List<GridCell> movableCells = GetMovableCells(unit, currentCell, maxMoveDistance);
-        foreach(GridCell movableCell in movableCells)
+        return TryGetMovePath(unit, currentCell, targetCell, maxMoveDistance, out _);
+    }
+
+    /// <summary>
+    /// 使用四方向 BFS 寻找从当前格到目标格的移动路径，路径不包含起点。
+    /// </summary>
+    public static bool TryGetMovePath(Unit unit, GridCell currentCell, GridCell targetCell, int maxMoveDistance, out List<GridCell> path)
+    {
+        path = new List<GridCell>();
+        if(unit == null || GridManager.Instance == null) return false;
+        if(maxMoveDistance <= 0) return false;
+        if(currentCell == targetCell) return false;
+
+        Queue<(GridCell cell, int distance)> cellsToCheck = new Queue<(GridCell cell, int distance)>();
+        Dictionary<GridCell, GridCell> previousCells = new Dictionary<GridCell, GridCell>();
+        HashSet<GridCell> checkedCells = new HashSet<GridCell>();
+        cellsToCheck.Enqueue((currentCell, 0));
+        checkedCells.Add(currentCell);
+
+        while(cellsToCheck.Count > 0)
         {
-            if(movableCell == targetCell) return true;
+            (GridCell cell, int distance) current = cellsToCheck.Dequeue();
+            if(current.distance >= maxMoveDistance) continue;
+
+            foreach(Direction direction in FourDirections)
+            {
+                GridCell neighborCell = GridManager.Instance.GetNeighborCell(current.cell, direction);
+                if(checkedCells.Contains(neighborCell)) continue;
+                checkedCells.Add(neighborCell);
+
+                if(!CanUnitMoveToCell(unit, neighborCell)) continue;
+
+                previousCells[neighborCell] = current.cell;
+                if(neighborCell == targetCell)
+                {
+                    path = BuildPath(currentCell, targetCell, previousCells);
+                    return true;
+                }
+
+                cellsToCheck.Enqueue((neighborCell, current.distance + 1));
+            }
         }
 
         return false;
     }
-}
 
+    /// <summary>
+    /// 根据 BFS 的前置格记录还原移动路径。
+    /// </summary>
+    private static List<GridCell> BuildPath(GridCell startCell, GridCell targetCell, Dictionary<GridCell, GridCell> previousCells)
+    {
+        List<GridCell> path = new List<GridCell>();
+        GridCell currentCell = targetCell;
+
+        while(currentCell != startCell)
+        {
+            path.Add(currentCell);
+            currentCell = previousCells[currentCell];
+        }
+
+        path.Reverse();
+        return path;
+    }
+}

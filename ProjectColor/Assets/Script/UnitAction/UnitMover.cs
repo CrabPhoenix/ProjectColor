@@ -68,7 +68,7 @@ public class UnitMover : MonoBehaviour
     }
 
     /// <summary>
-    /// 检查当前单位能否移动到指定范围内的目标格子。
+    /// 检查当前单位能否沿四方向路径移动到指定范围内的目标格子。
     /// </summary>
     public bool CanMoveToCell(GridCell targetCell, int maxMoveDistance)
     {
@@ -111,17 +111,18 @@ public class UnitMover : MonoBehaviour
     }
 
     /// <summary>
-    /// 尝试移动到指定范围内的目标格子。
+    /// 尝试沿四方向路径移动到指定范围内的目标格子。
     /// </summary>
     public bool TryMoveToCell(GridCell targetCell, int maxMoveDistance)
     {
         RefreshCurrentCell();
-        if(!CanMoveToCell(targetCell, maxMoveDistance)) return false;
+        if(!UnitMovementUtility.TryGetMovePath(unit, currentCell, targetCell, maxMoveDistance, out List<GridCell> movePath)) return false;
         if(!UnitGridOccupancy.MoveUnit(unit, currentCell, targetCell)) return false;
 
         currentCell = targetCell;
         StopAllCoroutines();
-        StartCoroutine(MoveToPosition(GridManager.Instance.GetWorldInGrid(currentCell)));
+        isMoving = true;
+        StartCoroutine(MoveAlongPath(movePath));
         return true;
     }
 
@@ -144,11 +145,24 @@ public class UnitMover : MonoBehaviour
     }
 
     /// <summary>
+    /// 沿四方向格子路径逐格移动单位。
+    /// </summary>
+    private IEnumerator MoveAlongPath(List<GridCell> movePath)
+    {
+        foreach(GridCell pathCell in movePath)
+        {
+            Vector3 targetPosition = GridManager.Instance.GetWorldInGrid(pathCell);
+            yield return MoveToPosition(targetPosition);
+        }
+
+        isMoving = false;
+    }
+
+    /// <summary>
     /// 将单位平滑移动到目标世界坐标。
     /// </summary>
     private IEnumerator MoveToPosition(Vector3 targetPosition)
     {
-        isMoving = true;
         while(Vector3.Distance(transform.position, targetPosition) > 0.01f)
         {
             transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
@@ -156,6 +170,5 @@ public class UnitMover : MonoBehaviour
         }
 
         transform.position = targetPosition;
-        isMoving = false;
     }
 }

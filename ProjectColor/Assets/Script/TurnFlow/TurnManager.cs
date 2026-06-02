@@ -10,7 +10,8 @@ public class TurnManager : MonoBehaviour
 {
     private static TurnManager instance;
 
-    [SerializeField] private float aiActionDelay = 0.2f;
+    [SerializeField] private float aiActionMinDelay = 0.5f;
+    [SerializeField] private float aiActionDelay = 0.5f;
     [SerializeField] private float phaseNoticeDuration = 2f;
     [SerializeField] private TurnPhaseCameraController cameraController;
 
@@ -35,6 +36,15 @@ public class TurnManager : MonoBehaviour
 
         instance = this;
         ResolveCameraController();
+    }
+
+    /// <summary>
+    /// 将 AI 行动延迟限制在设定的最小延迟内，防止过快或过慢。
+    /// </summary>
+    private void OnValidate()
+    {
+        aiActionMinDelay = Mathf.Max(0, aiActionMinDelay);
+        aiActionDelay = Mathf.Max(aiActionMinDelay, aiActionDelay);
     }
 
     /// <summary>
@@ -125,7 +135,7 @@ public class TurnManager : MonoBehaviour
                     cameraController.FollowUnit(unit);
                 }
 
-                ai.Act();
+                yield return ai.ActRoutine();
             }
 
             UnitMover unitMover = unit.UnitMover;
@@ -134,9 +144,10 @@ public class TurnManager : MonoBehaviour
                 yield return null;
             }
 
-            if(aiActionDelay > 0)
+            float actionDelay = aiActionDelay;
+            if(actionDelay > 0)
             {
-                yield return new WaitForSeconds(aiActionDelay);
+                yield return new WaitForSeconds(actionDelay);
             }
         }
     }
