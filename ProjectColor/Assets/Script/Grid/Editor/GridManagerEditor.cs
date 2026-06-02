@@ -20,5 +20,6 @@ public class GridManagerEditor : Editor
             gridManager.ToggleVisibility();   
             SceneView.RepaintAll();
         }
+
     }
 }

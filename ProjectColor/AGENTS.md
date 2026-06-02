@@ -1,0 +1,25 @@
+# Codex Project Rules
+
+## 参考脚本
+
+- 编写脚本前需要参考 `Assets/TrainingData` 中的示例脚本风格，尤其是 PacMan 示例里的 Unity 生命周期方法、事件订阅、`ScriptableObject` 配置、`CreateAssetMenu`、`#region` 分组和短注释组织方式。
+- 新代码优先贴近当前项目与 `Assets/TrainingData` 的写法，不引入不必要的新架构或命名体系。
+
+## 脚本编写要求
+
+- 命名规则：学习并沿用项目现有命名风格；变量使用驼峰命名法，类、结构体、枚举等类型使用帕斯卡命名法。
+- 注释风格：使用中文注释。每个类和结构体都需要添加 XML 文档注释，说明其功能，确保在其他地方引用时能看到注释。类中的方法也需要添加简短注释，说明方法的主要功能。
+- Inspector 暴露字段规则：不会被其他脚本引用、但需要在 Unity Inspector 中快速调整的变量，使用 `private` + `[SerializeField]`；需要被其他脚本引用的成员使用 `public`。
+- 组件创建规则：暂无额外限制。
+- GameObject / Prefab 创建：允许根据需求自动创建 GameObject 或 Prefab。
+- 架构兼容：新增或修改脚本时需要兼容现有 `GridManager` / `GameGrid` 架构。
+- 禁止事项：暂无额外限制。
+
+## 项目资产创建路径
+
+- 默认脚本创建路径：`Assets/Script`。
+- 默认 Prefab 创建路径：`Assets/Prefab`。
+- 默认图片创建路径：`Assets/Image`。
+- 当用户明确给出新的创建路径时，本次创建以用户给出的路径为准。
+- 用户给出的新路径只对该次明确请求生效；除非用户明确要求后续也改用新路径，否则之后创建资产仍然使用本文件记录的默认路径。
+

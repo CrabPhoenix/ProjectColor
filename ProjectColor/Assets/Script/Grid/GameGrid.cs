@@ -1,8 +1,7 @@
 using System;
-using UnityEngine;
 
 /// <summary>
-/// 格子系统，将游戏区域分成离散的格子。负责处理格子的数量，格子的位置，系统中的方向等
+/// 格子系统，将游戏区域分成离散的格子，负责处理格子数量、格子位置和格子方向。
 /// </summary>
 public class GameGrid
 {
@@ -24,7 +23,9 @@ public class GameGrid
         InitializeGrid(); 
     }
 
-
+    /// <summary>
+    /// 初始化所有格子对象。
+    /// </summary>
     private void InitializeGrid()
     {
         for (int x = 0; x < Width; x++)
@@ -37,15 +38,19 @@ public class GameGrid
         }
     }
 
-    // 检测格子是否有效
+    /// <summary>
+    /// 检测格子坐标是否在网格范围内。
+    /// </summary>
     public bool IsValidGrid(GridCell grid_position)
     {
-        if(grid_position.X < 0 || grid_position.Y < 0) {return false;}
-        if(grid_position.X >= width || grid_position.Y >= height) {return false;}
+        if(grid_position.X < 0 || grid_position.Y < 0) return false;
+        if(grid_position.X >= width || grid_position.Y >= height) return false;
         return true;
     }
 
-    // 将无效的各自变为最近的有效的格子
+    /// <summary>
+    /// 将越界格子修正为最近的有效格子。
+    /// </summary>
     public GridCell ConvertToValidGrid(GridCell grid_position)
     {
         if(IsValidGrid(grid_position)) return grid_position;
@@ -56,13 +61,24 @@ public class GameGrid
         if(x < 0) x = 0;
         if(x >= Width) x = Width - 1;
         if(y < 0) y = 0;
-        if(y >= Width) y = Width - 1;
+        if(y >= Height) y = Height - 1;
 
         return new GridCell(x, y);
     }
 
-    //通过转化过的格子方向确定移动的格子位置
+    /// <summary>
+    /// 根据方向获得邻格，并把越界结果修正到有效范围内。
+    /// </summary>
     public GridCell GetNeighborCellPosition(GridCell current_cell, Direction cell_direction)
+    {
+        GridCell neighbor_cell = GetNeighborCellPositionWithoutClamp(current_cell, cell_direction);
+        return ConvertToValidGrid(neighbor_cell);
+    }
+
+    /// <summary>
+    /// 根据方向获得邻格，不会把越界结果修正到有效范围内。
+    /// </summary>
+    public GridCell GetNeighborCellPositionWithoutClamp(GridCell current_cell, Direction cell_direction)
     {
         GridCell neighbor_cell;
         
@@ -75,22 +91,21 @@ public class GameGrid
                 neighbor_cell = new GridCell(current_cell.X, current_cell.Y - 1);
                 break;
             case Direction.Left:
-                neighbor_cell = new GridCell(current_cell.X - 1, current_cell.Y );
+                neighbor_cell = new GridCell(current_cell.X - 1, current_cell.Y);
                 break;
             case Direction.Right:
-                neighbor_cell = new GridCell(current_cell.X + 1, current_cell.Y );
+                neighbor_cell = new GridCell(current_cell.X + 1, current_cell.Y);
                 break;
             default:
                 throw new Exception("Invalid neighbor cell position");
         }
 
-        return ConvertToValidGrid(neighbor_cell);
+        return neighbor_cell;
     }
-
 }
 
 /// <summary>
-/// 记录格子坐标,类型为Vector2Int
+/// 记录格子坐标，类型类似 Vector2Int。
 /// </summary>
 public readonly struct GridCell
 {
@@ -102,9 +117,47 @@ public readonly struct GridCell
         X = x;
         Y = y;
     }
+
+    /// <summary>
+    /// 判断两个格子坐标是否相同。
+    /// </summary>
+    public override bool Equals(object obj)
+    {
+        if(!(obj is GridCell other)) return false;
+        return X == other.X && Y == other.Y;
+    }
+
+    /// <summary>
+    /// 获得格子坐标的哈希值。
+    /// </summary>
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            return (X * 397) ^ Y;
+        }
+    }
+
+    /// <summary>
+    /// 将格子坐标转为可读文本。
+    /// </summary>
+    public override string ToString()
+    {
+        return $"({X}, {Y})";
+    }
+
+    public static bool operator ==(GridCell left, GridCell right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(GridCell left, GridCell right)
+    {
+        return !left.Equals(right);
+    }
 }
 
 /// <summary>
-/// grid系统中的方向的枚举 
+/// Grid 系统中的四方向枚举。
 /// </summary>
 public enum Direction { Up, Down, Left, Right, Invalid }
