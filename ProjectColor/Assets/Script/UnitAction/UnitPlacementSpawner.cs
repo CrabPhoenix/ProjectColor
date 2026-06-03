@@ -8,6 +8,7 @@ public class UnitPlacementSpawner : MonoBehaviour
     [SerializeField] private UnitPlacementConfig config;
     [SerializeField] private bool spawnOnStart = true;
     [SerializeField] private bool clearGeneratedUnitsBeforeSpawn = true;
+    [SerializeField] private bool skipPlayerUnits = true;
 
     /// <summary>
     /// 启动时根据配置生成单位。
@@ -35,6 +36,7 @@ public class UnitPlacementSpawner : MonoBehaviour
         foreach(UnitPlacementCell cell in config.Cells)
         {
             if(!cell.HasUnit || cell.UnitPrefab == null) continue;
+            if(skipPlayerUnits && cell.UnitTeam == UnitTeam.Player) continue;
 
             GridCell gridCell = new GridCell(cell.CellPosition.x, cell.CellPosition.y);
             if(!GridManager.Instance.IsCellWalkable(gridCell)) continue;

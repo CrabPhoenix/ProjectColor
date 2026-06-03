@@ -30,8 +30,15 @@ public static class StageSceneBootstrap
         Scene activeScene = SceneManager.GetActiveScene();
         if(!activeScene.IsValid() || string.IsNullOrEmpty(activeScene.path)) return;
         bool sceneChanged = CleanupDuplicateEventSystems();
-        if(Object.FindFirstObjectByType<GameStageManager>() != null)
+        GameStageManager[] managers = Object.FindObjectsByType<GameStageManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        if(managers.Length > 0)
         {
+            if(!managers[0].enabled)
+            {
+                managers[0].enabled = true;
+                sceneChanged = true;
+            }
+
             if(sceneChanged)
             {
                 EditorSceneManager.MarkSceneDirty(activeScene);

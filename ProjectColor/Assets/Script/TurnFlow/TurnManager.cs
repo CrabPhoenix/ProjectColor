@@ -261,7 +261,16 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     private void EnsureGameStageManager()
     {
-        if(FindFirstObjectByType<GameStageManager>() != null) return;
+        GameStageManager[] managers = FindObjectsByType<GameStageManager>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        if(managers.Length > 0)
+        {
+            if(!managers[0].enabled)
+            {
+                managers[0].enabled = true;
+            }
+
+            return;
+        }
 
         gameObject.AddComponent<GameStageManager>();
     }

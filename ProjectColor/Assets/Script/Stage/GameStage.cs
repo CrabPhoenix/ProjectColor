@@ -4,6 +4,7 @@
 public enum GameStage
 {
     Title,
+    Deployment,
     Gameplay,
     Settlement
 }
