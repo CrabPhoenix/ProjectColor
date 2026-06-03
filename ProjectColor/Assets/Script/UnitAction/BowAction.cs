@@ -2,16 +2,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 近战剑攻击行动，只能攻击四方向相邻一格内的合法目标。
+/// 弓箭攻击行动，可攻击距离二到三格内的合法目标。
 /// </summary>
-public class SwordAction : AttackActionBase
+public class BowAction : AttackActionBase
 {
-    public override string ActionName => "Sword";
-    public override int Damage => GameConfigProvider.GetSwordDamage();
-    private int Range => GameConfigProvider.GetSwordRange();
+    public override string ActionName => "Bow";
+    public override int Damage => GameConfigProvider.GetBowDamage();
+    private int MinRange => GameConfigProvider.GetBowMinRange();
+    private int MaxRange => GameConfigProvider.GetBowMaxRange();
 
     /// <summary>
-    /// 判断指定目标是否可以被剑攻击。
+    /// 判断指定目标是否可以被弓箭攻击。
     /// </summary>
     public override bool CanExecute(Unit actor, Unit target)
     {
@@ -20,11 +21,11 @@ public class SwordAction : AttackActionBase
 
         actor.UnitMover.RefreshCurrentCell();
         target.UnitMover.RefreshCurrentCell();
-        return IsInRange(actor.CurrentCell, target.CurrentCell);
+        return IsInBowRange(actor.CurrentCell, target.CurrentCell);
     }
 
     /// <summary>
-    /// 获得当前剑攻击可以覆盖的有效相邻格子。
+    /// 获取弓箭当前可覆盖的有效攻击格子。
     /// </summary>
     public override List<GridCell> GetTargetCells(Unit actor)
     {
@@ -33,13 +34,12 @@ public class SwordAction : AttackActionBase
 
         actor.UnitMover.RefreshCurrentCell();
         GridCell actorCell = actor.CurrentCell;
-        int range = Range;
-        for(int x = -range; x <= range; x++)
+        for(int x = -MaxRange; x <= MaxRange; x++)
         {
-            for(int y = -range; y <= range; y++)
+            for(int y = -MaxRange; y <= MaxRange; y++)
             {
                 GridCell targetCell = new GridCell(actorCell.X + x, actorCell.Y + y);
-                if(!IsInRange(actorCell, targetCell)) continue;
+                if(!IsInBowRange(actorCell, targetCell)) continue;
                 if(!GridManager.Instance.IsCellWalkable(targetCell)) continue;
 
                 targetCells.Add(targetCell);
@@ -50,7 +50,7 @@ public class SwordAction : AttackActionBase
     }
 
     /// <summary>
-    /// 获得当前可以攻击的相邻目标。
+    /// 获取当前可以被弓箭攻击的目标。
     /// </summary>
     public List<Unit> GetAttackableTargets(Unit actor)
     {
@@ -69,30 +69,21 @@ public class SwordAction : AttackActionBase
     }
 
     /// <summary>
-    /// 判断两个格子是否四方向相邻。
-    /// </summary>
-    public bool IsAdjacent(GridCell firstCell, GridCell secondCell)
-    {
-        int distance = Mathf.Abs(firstCell.X - secondCell.X) + Mathf.Abs(firstCell.Y - secondCell.Y);
-        return distance == 1;
-    }
-
-    /// <summary>
-    /// 判断从指定格子能否攻击目标。
+    /// 判断从指定格子是否可以攻击目标。
     /// </summary>
     public bool CanAttackFromCell(Unit actor, GridCell actorCell, Unit target)
     {
         if(!IsValidTarget(actor, target)) return false;
         target.UnitMover.RefreshCurrentCell();
-        return IsInRange(actorCell, target.CurrentCell);
+        return IsInBowRange(actorCell, target.CurrentCell);
     }
 
     /// <summary>
-    /// 判断目标格是否位于剑攻击最大范围内。
+    /// 判断目标格是否位于弓箭攻击距离二到三格内。
     /// </summary>
-    private bool IsInRange(GridCell firstCell, GridCell secondCell)
+    private bool IsInBowRange(GridCell actorCell, GridCell targetCell)
     {
-        int distance = Mathf.Abs(firstCell.X - secondCell.X) + Mathf.Abs(firstCell.Y - secondCell.Y);
-        return distance >= 1 && distance <= Range;
+        int distance = Mathf.Abs(actorCell.X - targetCell.X) + Mathf.Abs(actorCell.Y - targetCell.Y);
+        return distance >= MinRange && distance <= MaxRange;
     }
 }

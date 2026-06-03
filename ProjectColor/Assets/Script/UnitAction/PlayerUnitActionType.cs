@@ -6,6 +6,7 @@ public enum PlayerUnitActionType
     None,
     Attack,
     Sword,
+    Bow,
     Interaction,
     ConvertNeutral,
     Wait

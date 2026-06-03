@@ -16,6 +16,9 @@ MonoBehaviour:
   - unitPrefab: {fileID: 800100000001, guid: a416b7a48de88df45a4089c9cd0286c1, type: 3}
     maxHealth: 100
     moveRange: 2
+  - unitPrefab: {fileID: 800100000001, guid: b28229a8a62fb9843bbaba12f6d4c972, type: 3}
+    maxHealth: 100
+    moveRange: 2
   enemyUnitStats:
   - unitPrefab: {fileID: 800200000001, guid: db2bb2299309cfd4a9253dd11b9e03e0, type: 3}
     maxHealth: 100

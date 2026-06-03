@@ -8,11 +8,16 @@ public class GameConfigProvider : MonoBehaviour
     private const int DefaultMaxHealth = 100;
     private const int DefaultMoveRange = 2;
     private const int DefaultSwordDamage = 50;
+    private const int DefaultSwordRange = 1;
+    private const int DefaultBowDamage = 50;
+    private const int DefaultBowMinRange = 2;
+    private const int DefaultBowMaxRange = 3;
 
     private static GameConfigProvider instance;
 
     [SerializeField] private UnitStatsConfig unitStatsConfig;
     [SerializeField] private SwordAttackConfig swordAttackConfig;
+    [SerializeField] private BowAttackConfig bowAttackConfig;
 
     /// <summary>
     /// 建立配置提供者单例并补齐默认配置引用。
@@ -65,6 +70,42 @@ public class GameConfigProvider : MonoBehaviour
     }
 
     /// <summary>
+    /// 获取 Sword 攻击最大范围。
+    /// </summary>
+    public static int GetSwordRange()
+    {
+        SwordAttackConfig config = GetSwordAttackConfig();
+        return config != null ? config.Range : DefaultSwordRange;
+    }
+
+    /// <summary>
+    /// 获取 Bow 攻击伤害。
+    /// </summary>
+    public static int GetBowDamage()
+    {
+        BowAttackConfig config = GetBowAttackConfig();
+        return config != null ? config.Damage : DefaultBowDamage;
+    }
+
+    /// <summary>
+    /// 获取 Bow 攻击最小范围。
+    /// </summary>
+    public static int GetBowMinRange()
+    {
+        BowAttackConfig config = GetBowAttackConfig();
+        return config != null ? config.MinRange : DefaultBowMinRange;
+    }
+
+    /// <summary>
+    /// 获取 Bow 攻击最大范围。
+    /// </summary>
+    public static int GetBowMaxRange()
+    {
+        BowAttackConfig config = GetBowAttackConfig();
+        return config != null ? config.MaxRange : DefaultBowMaxRange;
+    }
+
+    /// <summary>
     /// 获取单位属性配置。
     /// </summary>
     private static UnitStatsConfig GetUnitStatsConfig()
@@ -80,6 +121,15 @@ public class GameConfigProvider : MonoBehaviour
     {
         GameConfigProvider provider = ResolveProvider();
         return provider != null ? provider.swordAttackConfig : null;
+    }
+
+    /// <summary>
+    /// 获取 Bow 攻击配置。
+    /// </summary>
+    private static BowAttackConfig GetBowAttackConfig()
+    {
+        GameConfigProvider provider = ResolveProvider();
+        return provider != null ? provider.bowAttackConfig : null;
     }
 
     /// <summary>
@@ -115,7 +165,12 @@ public class GameConfigProvider : MonoBehaviour
 
         if(swordAttackConfig == null)
         {
-            swordAttackConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<SwordAttackConfig>("Assets/Config/SwordAttackConfig.asset");
+            swordAttackConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<SwordAttackConfig>("Assets/Config/Attack/SwordAttackConfig.asset");
+        }
+
+        if(bowAttackConfig == null)
+        {
+            bowAttackConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<BowAttackConfig>("Assets/Config/Attack/BowAttackConfig.asset");
         }
 #endif
     }

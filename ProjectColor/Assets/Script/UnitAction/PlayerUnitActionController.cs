@@ -14,6 +14,7 @@ public class PlayerUnitActionController : MonoBehaviour
     [SerializeField] private GameObject playerUnitPrefab;
 
     private readonly SwordAction swordAction = new SwordAction();
+    private readonly BowAction bowAction = new BowAction();
     private readonly ConvertNeutralAction convertNeutralAction = new ConvertNeutralAction();
     private readonly WaitAction waitAction = new WaitAction();
     private Unit selectedUnit;
@@ -162,6 +163,12 @@ public class PlayerUnitActionController : MonoBehaviour
             return true;
         }
 
+        if(selectedAction == PlayerUnitActionType.Bow)
+        {
+            TryExecuteBow(worldPosition);
+            return true;
+        }
+
         if(selectedAction == PlayerUnitActionType.ConvertNeutral)
         {
             TryExecuteConvertNeutral(worldPosition);
@@ -193,6 +200,12 @@ public class PlayerUnitActionController : MonoBehaviour
         if(actionType == PlayerUnitActionType.Sword)
         {
             SelectSwordAction();
+            return;
+        }
+
+        if(actionType == PlayerUnitActionType.Bow)
+        {
+            SelectBowAction();
             return;
         }
 
@@ -231,6 +244,8 @@ public class PlayerUnitActionController : MonoBehaviour
     /// </summary>
     private void SelectSwordAction()
     {
+        if(!UnitAttackSkillSet.HasSkill(selectedUnit, UnitAttackSkillType.Sword)) return;
+
         selectedAction = PlayerUnitActionType.Sword;
         HideMoveRange();
         interactionRangeHighlighter.ClearInteractionRange();
@@ -241,7 +256,29 @@ public class PlayerUnitActionController : MonoBehaviour
             actionCellHighlighter.ShowAttackCell(selectedUnit.CurrentCell);
         }
 
-        attackRangeHighlighter.ShowAttackRange(selectedUnit);
+        attackRangeHighlighter.ShowAttackRange(selectedUnit, swordAction);
+        actionMenu.SetSelectedAction(selectedAction);
+        HideMenuOnly();
+    }
+
+    /// <summary>
+    /// 选择 Bow 行动并显示自身格黄色边框与红色攻击范围。
+    /// </summary>
+    private void SelectBowAction()
+    {
+        if(!UnitAttackSkillSet.HasSkill(selectedUnit, UnitAttackSkillType.Bow)) return;
+
+        selectedAction = PlayerUnitActionType.Bow;
+        HideMoveRange();
+        interactionRangeHighlighter.ClearInteractionRange();
+
+        if(selectedUnit != null)
+        {
+            selectedUnit.UnitMover.RefreshCurrentCell();
+            actionCellHighlighter.ShowAttackCell(selectedUnit.CurrentCell);
+        }
+
+        attackRangeHighlighter.ShowAttackRange(selectedUnit, bowAction);
         actionMenu.SetSelectedAction(selectedAction);
         HideMenuOnly();
     }
@@ -291,6 +328,22 @@ public class PlayerUnitActionController : MonoBehaviour
         if(!UnitGridOccupancy.TryGetUnit(targetCell, out Unit target)) return;
 
         if(swordAction.Execute(selectedUnit, target))
+        {
+            ClearAfterAction();
+        }
+    }
+
+    /// <summary>
+    /// 尝试对点击格子上的单位执行 Bow。
+    /// </summary>
+    private void TryExecuteBow(Vector3 worldPosition)
+    {
+        if(GridManager.Instance == null) return;
+
+        GridCell targetCell = GridManager.Instance.GetCellFromWorldPosition(worldPosition);
+        if(!UnitGridOccupancy.TryGetUnit(targetCell, out Unit target)) return;
+
+        if(bowAction.Execute(selectedUnit, target))
         {
             ClearAfterAction();
         }

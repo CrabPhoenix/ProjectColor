@@ -11,6 +11,8 @@ public class TurnPhaseUI : MonoBehaviour
 {
     [SerializeField] private TurnManager turnManager;
     [SerializeField] private Button endPhaseButton;
+    [SerializeField] private Vector2 endPhaseButtonOffset = new Vector2(-60f, -72f);
+    [SerializeField] private Vector2 endPhaseButtonSize = new Vector2(180f, 44f);
 
     private Canvas turnCanvas;
     private GameStageManager stageManager;
@@ -30,6 +32,7 @@ public class TurnPhaseUI : MonoBehaviour
 
         EnsureEventSystem();
         if(endPhaseButton == null) endPhaseButton = CreateEndPhaseButton();
+        ConfigureEndPhaseButton(endPhaseButton);
         CreatePhaseNoticePanel();
 
         endPhaseButton.onClick.AddListener(HandleEndPhaseButton);
@@ -280,20 +283,14 @@ public class TurnPhaseUI : MonoBehaviour
         GameObject buttonObject = new GameObject("End Turn");
         buttonObject.transform.SetParent(turnCanvas.transform, false);
 
-        RectTransform buttonRect = buttonObject.AddComponent<RectTransform>();
-        buttonRect.anchorMin = new Vector2(1, 1);
-        buttonRect.anchorMax = new Vector2(1, 1);
-        buttonRect.pivot = new Vector2(1, 1);
-        buttonRect.anchoredPosition = new Vector2(-20, -20);
-        buttonRect.sizeDelta = new Vector2(150, 40);
-
+        buttonObject.AddComponent<RectTransform>();
         Image image = buttonObject.AddComponent<Image>();
         image.color = new Color(0.35f, 0.35f, 0.35f, 1f);
 
         Button button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
 
-        Text text = CreateText(buttonObject.transform, "Text", "End Turn", 20, Color.yellow);
+        Text text = CreateText(buttonObject.transform, "Text", "\u7ed3\u675f\u672c\u56de\u5408", 20, Color.yellow);
         RectTransform textRect = text.GetComponent<RectTransform>();
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
@@ -301,6 +298,45 @@ public class TurnPhaseUI : MonoBehaviour
         textRect.offsetMax = Vector2.zero;
 
         return button;
+    }
+
+    /// <summary>
+    /// 将结束回合按钮固定到右上角并刷新显示文字。
+    /// </summary>
+    private void ConfigureEndPhaseButton(Button button)
+    {
+        if(button == null) return;
+
+        button.gameObject.name = "End Turn";
+        button.transform.SetAsLastSibling();
+        Canvas canvas = button.GetComponentInParent<Canvas>();
+        if(canvas != null)
+        {
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 2000;
+        }
+
+        RectTransform buttonRect = button.GetComponent<RectTransform>();
+        if(buttonRect == null) buttonRect = button.gameObject.AddComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(1, 1);
+        buttonRect.anchorMax = new Vector2(1, 1);
+        buttonRect.pivot = new Vector2(1, 1);
+        buttonRect.anchoredPosition = endPhaseButtonOffset;
+        buttonRect.sizeDelta = endPhaseButtonSize;
+
+        Text text = button.GetComponentInChildren<Text>();
+        if(text == null)
+        {
+            text = CreateText(button.transform, "Text", "\u7ed3\u675f\u672c\u56de\u5408", 20, Color.yellow);
+        }
+
+        text.text = "\u7ed3\u675f\u672c\u56de\u5408";
+        text.color = Color.yellow;
+        RectTransform textRect = text.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
     }
 
     /// <summary>
@@ -344,7 +380,7 @@ public class TurnPhaseUI : MonoBehaviour
         GameObject canvasObject = new GameObject("TurnPhaseCanvas");
         Canvas canvas = canvasObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 1000;
+        canvas.sortingOrder = 2000;
         canvasObject.AddComponent<CanvasScaler>();
         canvasObject.AddComponent<GraphicRaycaster>();
         return canvas;

@@ -92,6 +92,11 @@ public class UnitDeployController : MonoBehaviour
         if(!IsLeftClickThisFrame()) return;
         if(IsPointerOverUI()) return;
 
+        if(selectedPrefab == null && TryPickUpPlacedUnit())
+        {
+            return;
+        }
+
         TryPlaceSelectedUnit();
     }
 
@@ -248,6 +253,48 @@ public class UnitDeployController : MonoBehaviour
     }
 
     /// <summary>
+    /// 尝试拾起已经部署到场景中的玩家单位。
+    /// </summary>
+    private bool TryPickUpPlacedUnit()
+    {
+        if(!TryGetMouseCell(out GridCell targetCell)) return false;
+        if(!UnitGridOccupancy.TryGetUnit(targetCell, out Unit placedUnit)) return false;
+        if(placedUnit == null || !placedUnit.CanPlayerControl) return false;
+        if(!TryGetInventoryPrefabForUnit(placedUnit, out Unit prefab)) return false;
+
+        UnitGridOccupancy.UnregisterUnit(placedUnit);
+        Destroy(placedUnit.gameObject);
+        inventory[prefab] = inventory.TryGetValue(prefab, out int count) ? count + 1 : 1;
+        selectedPrefab = prefab;
+        EnsurePreviewObject();
+        ApplyPreviewSprite(selectedPrefab);
+        RefreshUI();
+        UpdatePreview();
+        return true;
+    }
+
+    /// <summary>
+    /// 根据场景单位匹配部署库存中的 Prefab。
+    /// </summary>
+    private bool TryGetInventoryPrefabForUnit(Unit placedUnit, out Unit prefab)
+    {
+        prefab = null;
+        if(placedUnit == null) return false;
+
+        string placedUnitName = NormalizeUnitName(placedUnit.name);
+        foreach(Unit unitPrefab in inventory.Keys)
+        {
+            if(unitPrefab == null) continue;
+            if(unitPrefab.name != placedUnitName) continue;
+
+            prefab = unitPrefab;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// 判断指定格子是否可以部署单位。
     /// </summary>
     private bool CanDeployToCell(GridCell cell)
@@ -337,6 +384,14 @@ public class UnitDeployController : MonoBehaviour
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// 去除运行时实例名称中的 Clone 后缀。
+    /// </summary>
+    private string NormalizeUnitName(string unitName)
+    {
+        return unitName.Replace("(Clone)", string.Empty).Trim();
     }
 
     /// <summary>

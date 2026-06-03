@@ -11,7 +11,6 @@ public class PlayerAttackRangeHighlighter : MonoBehaviour
     [SerializeField] private int sortingOrder = 110;
 
     private readonly List<GameObject> highlightObjects = new List<GameObject>();
-    private readonly SwordAction swordAction = new SwordAction();
     private Material lineMaterial;
 
     /// <summary>
@@ -19,10 +18,18 @@ public class PlayerAttackRangeHighlighter : MonoBehaviour
     /// </summary>
     public void ShowAttackRange(Unit unit)
     {
-        ClearAttackRange();
-        if(unit == null || GridManager.Instance == null) return;
+        ShowAttackRange(unit, new SwordAction());
+    }
 
-        List<GridCell> targetCells = swordAction.GetTargetCells(unit);
+    /// <summary>
+    /// 显示指定攻击行动当前可攻击的目标格子。
+    /// </summary>
+    public void ShowAttackRange(Unit unit, UnitActionBase attackAction)
+    {
+        ClearAttackRange();
+        if(unit == null || attackAction == null || GridManager.Instance == null) return;
+
+        List<GridCell> targetCells = attackAction.GetTargetCells(unit);
         foreach(GridCell cell in targetCells)
         {
             CreateCellBorder(cell);
