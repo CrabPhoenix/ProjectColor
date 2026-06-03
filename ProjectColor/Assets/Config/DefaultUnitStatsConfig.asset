@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31bc8f0f36bf49bb9d9bb6d9506f840f, type: 3}
+  m_Name: DefaultUnitStatsConfig
+  m_EditorClassIdentifier: 
+  playerUnitStats:
+  - unitPrefab: {fileID: 800100000001, guid: a416b7a48de88df45a4089c9cd0286c1, type: 3}
+    maxHealth: 100
+    moveRange: 2
+  enemyUnitStats:
+  - unitPrefab: {fileID: 800200000001, guid: db2bb2299309cfd4a9253dd11b9e03e0, type: 3}
+    maxHealth: 100
+    moveRange: 2
+  neutralUnitStats:
+  - unitPrefab: {fileID: 800300000001, guid: 1ecff609d16bab7488266e8a1a4c6f91, type: 3}
+    maxHealth: 100
+    moveRange: 2
+  allyUnitStats:
+  - unitPrefab: {fileID: 800300000001, guid: 489c621f566ccff4382e719f8e8110c1, type: 3}
+    maxHealth: 100
+    moveRange: 2

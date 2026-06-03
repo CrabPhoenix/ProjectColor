@@ -29,6 +29,11 @@ public class PlayerUnitActionMenu : MonoBehaviour
     private Action<PlayerUnitActionType> onActionSelected;
 
     /// <summary>
+    /// 判断当前行动菜单是否正在显示。
+    /// </summary>
+    public bool IsVisible => panelRect != null && panelRect.gameObject.activeSelf;
+
+    /// <summary>
     /// 初始化菜单 UI。
     /// </summary>
     private void Awake()

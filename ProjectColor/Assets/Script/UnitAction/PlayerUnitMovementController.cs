@@ -6,7 +6,6 @@ using UnityEngine;
 /// </summary>
 public class PlayerUnitMovementController : MonoBehaviour
 {
-    [SerializeField] private int moveRange = 2;
     [SerializeField] private TurnPhaseCameraController cameraController;
 
     private Unit selectedUnit;
@@ -56,7 +55,7 @@ public class PlayerUnitMovementController : MonoBehaviour
         if(!CanUnitMoveThisPhase(selectedUnit)) return false;
 
         GridCell targetCell = GridManager.Instance.GetCellFromWorldPosition(worldPosition);
-        bool moved = selectedUnit.UnitMover.TryMoveToCell(targetCell, moveRange);
+        bool moved = selectedUnit.UnitMover.TryMoveToCell(targetCell, selectedUnit.UnitMover.MoveRange);
         if(!moved) return false;
 
         UnitActionState actionState = selectedUnit.GetComponent<UnitActionState>();

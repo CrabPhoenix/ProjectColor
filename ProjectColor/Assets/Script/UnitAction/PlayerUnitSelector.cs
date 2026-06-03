@@ -48,6 +48,16 @@ public class PlayerUnitSelector : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        if(!GameStageManager.IsGameplayActive())
+        {
+            if(selectedUnit != null)
+            {
+                ClearSelection();
+            }
+
+            return;
+        }
+
         if(TurnManager.Instance != null && TurnManager.Instance.CurrentPhase != TurnPhase.Player) return;
         if(selectedUnit != null && selectedUnit.UnitMover != null && selectedUnit.UnitMover.IsMoving) return;
 
@@ -55,6 +65,24 @@ public class PlayerUnitSelector : MonoBehaviour
         {
             if(actionController != null && actionController.HandleRightClick())
             {
+                return;
+            }
+
+            if(selectedUnit != null)
+            {
+                if(!movementController.CanUnitMoveThisPhase(selectedUnit))
+                {
+                    ClearSelection();
+                    return;
+                }
+
+                if(actionController != null && actionController.IsMenuVisible)
+                {
+                    actionController.HideMenuOnly();
+                    return;
+                }
+
+                ClearSelection();
                 return;
             }
         }

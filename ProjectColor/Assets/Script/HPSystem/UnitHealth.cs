@@ -23,10 +23,15 @@ public class UnitHealth : MonoBehaviour
     private void Awake()
     {
         unit = GetComponent<Unit>();
+        maxHealth = GameConfigProvider.GetMaxHealth(unit, maxHealth);
         maxHealth = Mathf.Max(1, maxHealth);
         if(currentHealth <= 0)
         {
             currentHealth = maxHealth;
+        }
+        else
+        {
+            currentHealth = Mathf.Min(currentHealth, maxHealth);
         }
     }
 

@@ -21,6 +21,7 @@ public class PlayerUnitActionController : MonoBehaviour
     private bool subscribedPhaseEvent;
 
     public bool HasSelectedUnit => selectedUnit != null;
+    public bool IsMenuVisible => actionMenu != null && actionMenu.IsVisible;
     public event Action OnSelectionCleared;
 
     /// <summary>
@@ -108,6 +109,14 @@ public class PlayerUnitActionController : MonoBehaviour
     }
 
     /// <summary>
+    /// 只隐藏当前行动菜单，不清除单位选择和高亮。
+    /// </summary>
+    public void HideMenuOnly()
+    {
+        actionMenu.Hide();
+    }
+
+    /// <summary>
     /// 在当前单位仍可行动时重新显示行动菜单。
     /// </summary>
     public void RefreshMenu()
@@ -133,12 +142,11 @@ public class PlayerUnitActionController : MonoBehaviour
             selectedAction = PlayerUnitActionType.None;
             ClearActionHighlights();
             RestoreMoveRangeIfCanMove();
-            actionMenu.SetSelectedAction(selectedAction);
+            RefreshMenu();
             return true;
         }
 
-        ClearAfterAction();
-        return true;
+        return false;
     }
 
     /// <summary>
@@ -235,6 +243,7 @@ public class PlayerUnitActionController : MonoBehaviour
 
         attackRangeHighlighter.ShowAttackRange(selectedUnit);
         actionMenu.SetSelectedAction(selectedAction);
+        HideMenuOnly();
     }
 
     /// <summary>
@@ -248,6 +257,7 @@ public class PlayerUnitActionController : MonoBehaviour
         actionCellHighlighter.Clear();
         interactionRangeHighlighter.ShowInteractionRange(selectedUnit, convertNeutralAction);
         actionMenu.SetSelectedAction(PlayerUnitActionType.Interaction);
+        HideMenuOnly();
     }
 
     /// <summary>
@@ -267,6 +277,7 @@ public class PlayerUnitActionController : MonoBehaviour
         }
 
         actionMenu.SetSelectedAction(selectedAction);
+        HideMenuOnly();
     }
 
     /// <summary>

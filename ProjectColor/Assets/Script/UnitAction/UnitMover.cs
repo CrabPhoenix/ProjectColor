@@ -15,6 +15,7 @@ public class UnitMover : MonoBehaviour
 
     public GridCell CurrentCell => currentCell;
     public bool IsMoving => isMoving;
+    public int MoveRange => GameConfigProvider.GetMoveRange(unit);
 
     /// <summary>
     /// 缓存单位组件。

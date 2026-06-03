@@ -13,9 +13,11 @@ public class TurnPhaseUI : MonoBehaviour
     [SerializeField] private Button endPhaseButton;
 
     private Canvas turnCanvas;
+    private GameStageManager stageManager;
     private GameObject phaseNoticePanel;
     private Text phaseNoticeText;
     private Coroutine phaseNoticeCoroutine;
+    private bool subscribedStageEvent;
 
     /// <summary>
     /// 初始化按钮、提示字幕、事件系统并绑定点击事件。
@@ -24,12 +26,14 @@ public class TurnPhaseUI : MonoBehaviour
     {
         if(turnManager == null) turnManager = GetComponent<TurnManager>();
         if(turnManager == null) turnManager = FindFirstObjectByType<TurnManager>();
+        ResolveStageManager();
 
         EnsureEventSystem();
         if(endPhaseButton == null) endPhaseButton = CreateEndPhaseButton();
         CreatePhaseNoticePanel();
 
         endPhaseButton.onClick.AddListener(HandleEndPhaseButton);
+        RefreshStageVisibility();
     }
 
     /// <summary>
@@ -41,7 +45,19 @@ public class TurnPhaseUI : MonoBehaviour
         {
             turnManager.OnPhaseChanged += HandlePhaseChanged;
             turnManager.OnPhaseNoticeRequested += HandlePhaseNoticeRequested;
+            turnManager.OnGameResult += HandleGameResult;
         }
+
+        TrySubscribeStageEvent();
+    }
+
+    /// <summary>
+    /// 启动时再次尝试订阅整体阶段事件。
+    /// </summary>
+    private void Start()
+    {
+        TrySubscribeStageEvent();
+        RefreshStageVisibility();
     }
 
     /// <summary>
@@ -53,12 +69,20 @@ public class TurnPhaseUI : MonoBehaviour
         {
             turnManager.OnPhaseChanged -= HandlePhaseChanged;
             turnManager.OnPhaseNoticeRequested -= HandlePhaseNoticeRequested;
+            turnManager.OnGameResult -= HandleGameResult;
         }
 
         if(endPhaseButton != null)
         {
             endPhaseButton.onClick.RemoveListener(HandleEndPhaseButton);
         }
+
+        if(stageManager != null && subscribedStageEvent)
+        {
+            stageManager.OnStageChanged -= HandleStageChanged;
+        }
+
+        subscribedStageEvent = false;
     }
 
     /// <summary>
@@ -79,7 +103,7 @@ public class TurnPhaseUI : MonoBehaviour
     {
         if(endPhaseButton != null)
         {
-            endPhaseButton.gameObject.SetActive(phase == TurnPhase.Player);
+            endPhaseButton.gameObject.SetActive(GameStageManager.IsGameplayActive() && phase == TurnPhase.Player);
         }
     }
 
@@ -88,6 +112,7 @@ public class TurnPhaseUI : MonoBehaviour
     /// </summary>
     private void HandlePhaseNoticeRequested(TurnPhase phase, float duration)
     {
+        if(!GameStageManager.IsGameplayActive()) return;
         if(phaseNoticeText == null || phaseNoticePanel == null) return;
 
         if(phaseNoticeCoroutine != null)
@@ -99,10 +124,42 @@ public class TurnPhaseUI : MonoBehaviour
     }
 
     /// <summary>
+    /// 显示对局胜负结果并隐藏结束阶段按钮。
+    /// </summary>
+    private void HandleGameResult(GameResult result)
+    {
+        if(endPhaseButton != null)
+        {
+            endPhaseButton.gameObject.SetActive(false);
+        }
+
+        if(phaseNoticeCoroutine != null)
+        {
+            StopCoroutine(phaseNoticeCoroutine);
+            phaseNoticeCoroutine = null;
+        }
+
+        if(phaseNoticePanel != null)
+        {
+            phaseNoticePanel.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 整体阶段变化时刷新回合 UI 显示。
+    /// </summary>
+    private void HandleStageChanged(GameStage stage)
+    {
+        RefreshStageVisibility();
+    }
+
+    /// <summary>
     /// 显示阶段提示并在指定时间后隐藏。
     /// </summary>
     private IEnumerator ShowPhaseNotice(TurnPhase phase, float duration)
     {
+        if(!GameStageManager.IsGameplayActive()) yield break;
+
         if(phase == TurnPhase.Ally)
         {
             phaseNoticeText.text = "Ally Phase";
@@ -130,30 +187,87 @@ public class TurnPhaseUI : MonoBehaviour
     }
 
     /// <summary>
+    /// 根据整体游戏阶段刷新回合 UI 显隐。
+    /// </summary>
+    private void RefreshStageVisibility()
+    {
+        bool isGameplay = GameStageManager.IsGameplayActive();
+        if(endPhaseButton != null)
+        {
+            endPhaseButton.gameObject.SetActive(isGameplay && turnManager != null && turnManager.CurrentPhase == TurnPhase.Player);
+        }
+
+        if(!isGameplay && phaseNoticePanel != null)
+        {
+            if(phaseNoticeCoroutine != null)
+            {
+                StopCoroutine(phaseNoticeCoroutine);
+                phaseNoticeCoroutine = null;
+            }
+
+            phaseNoticePanel.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 查找整体游戏阶段管理器。
+    /// </summary>
+    private void ResolveStageManager()
+    {
+        if(stageManager != null) return;
+
+        stageManager = FindFirstObjectByType<GameStageManager>();
+    }
+
+    /// <summary>
+    /// 尝试订阅整体游戏阶段事件。
+    /// </summary>
+    private void TrySubscribeStageEvent()
+    {
+        if(subscribedStageEvent) return;
+
+        ResolveStageManager();
+        if(stageManager == null) return;
+
+        stageManager.OnStageChanged += HandleStageChanged;
+        subscribedStageEvent = true;
+    }
+
+    /// <summary>
     /// 确保场景中存在可支持 Input System 的 UI 事件系统。
     /// </summary>
     private void EnsureEventSystem()
     {
-        if(EventSystem.current != null)
+        EventSystem[] eventSystems = FindObjectsByType<EventSystem>(FindObjectsSortMode.None);
+        EventSystem eventSystem = eventSystems.Length > 0 ? eventSystems[0] : null;
+
+        if(eventSystem == null)
         {
-            StandaloneInputModule standaloneInputModule = EventSystem.current.GetComponent<StandaloneInputModule>();
-            if(standaloneInputModule != null)
-            {
-                standaloneInputModule.enabled = false;
-                Destroy(standaloneInputModule);
-            }
-
-            if(EventSystem.current.GetComponent<InputSystemUIInputModule>() == null)
-            {
-                EventSystem.current.gameObject.AddComponent<InputSystemUIInputModule>();
-            }
-
-            return;
+            GameObject eventSystemObject = new GameObject("EventSystem");
+            eventSystem = eventSystemObject.AddComponent<EventSystem>();
+        }
+        else
+        {
+            eventSystem.gameObject.name = "EventSystem";
         }
 
-        GameObject eventSystemObject = new GameObject("EventSystem");
-        eventSystemObject.AddComponent<EventSystem>();
-        eventSystemObject.AddComponent<InputSystemUIInputModule>();
+        for(int i = 1; i < eventSystems.Length; i++)
+        {
+            if(eventSystems[i] == null) continue;
+
+            Destroy(eventSystems[i].gameObject);
+        }
+
+        StandaloneInputModule standaloneInputModule = eventSystem.GetComponent<StandaloneInputModule>();
+        if(standaloneInputModule != null)
+        {
+            Destroy(standaloneInputModule);
+        }
+
+        if(eventSystem.GetComponent<InputSystemUIInputModule>() == null)
+        {
+            eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+        }
     }
 
     /// <summary>

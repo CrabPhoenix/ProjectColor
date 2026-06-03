@@ -6,10 +6,8 @@ using UnityEngine;
 /// </summary>
 public class SwordAction : AttackActionBase
 {
-    public const int SwordDamage = 50;
-
     public override string ActionName => "Sword";
-    public override int Damage => SwordDamage;
+    public override int Damage => GameConfigProvider.GetSwordDamage();
 
     /// <summary>
     /// 判断指定目标是否可以被剑攻击。

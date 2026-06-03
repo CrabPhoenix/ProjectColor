@@ -26,6 +26,7 @@ public class CameraPlaneMovement : MonoBehaviour
     private void Update()
     {
         if(!canControl) return;
+        if(!GameStageManager.IsGameplayActive()) return;
         if(Keyboard.current == null) return;
 
         Vector2 inputDirection = Vector2.zero;

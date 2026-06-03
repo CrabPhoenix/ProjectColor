@@ -22,7 +22,7 @@ public class UnitRandomAI : MonoBehaviour
     }
 
     /// <summary>
-    /// 执行一次 AI 行动协程：先攻击，否则移动一格，移动后若可攻击则攻击。
+    /// 执行一次 AI 行动协程：先攻击，否则按配置移动，移动后若可攻击则攻击。
     /// </summary>
     public IEnumerator ActRoutine()
     {
@@ -77,27 +77,31 @@ public class UnitRandomAI : MonoBehaviour
     }
 
     /// <summary>
-    /// 尝试向最近可伤害目标移动一格。
+    /// 尝试向最近可伤害目标按配置移动。
     /// </summary>
     private bool TryMoveTowardNearestDamageTarget()
     {
         if(GridManager.Instance == null || unitMover == null) return false;
 
         unitMover.RefreshCurrentCell();
-        if(!TryFindNextCellTowardTarget(out GridCell nextCell)) return false;
+        if(!TryFindPathTowardTarget(out List<GridCell> path)) return false;
+        if(path.Count == 0) return false;
 
-        return unitMover.TryMoveToCell(nextCell);
+        int moveRange = Mathf.Max(1, unitMover.MoveRange);
+        int destinationIndex = Mathf.Min(moveRange, path.Count) - 1;
+        GridCell destinationCell = path[destinationIndex];
+        return unitMover.TryMoveToCell(destinationCell, moveRange);
     }
 
     /// <summary>
-    /// 使用 BFS 找到通向最近可伤害目标的下一格。
+    /// 使用 BFS 找到通向最近可伤害目标的完整路径。
     /// </summary>
-    private bool TryFindNextCellTowardTarget(out GridCell nextCell)
+    private bool TryFindPathTowardTarget(out List<GridCell> path)
     {
-        nextCell = default;
+        path = new List<GridCell>();
 
         Queue<GridCell> cellsToCheck = new Queue<GridCell>();
-        Dictionary<GridCell, GridCell> firstSteps = new Dictionary<GridCell, GridCell>();
+        Dictionary<GridCell, GridCell> previousCells = new Dictionary<GridCell, GridCell>();
         HashSet<GridCell> checkedCells = new HashSet<GridCell>();
 
         GridCell startCell = unit.CurrentCell;
@@ -109,7 +113,7 @@ public class UnitRandomAI : MonoBehaviour
             GridCell currentCell = cellsToCheck.Dequeue();
             if(currentCell != startCell && CanAttackAnyTargetFromCell(currentCell))
             {
-                nextCell = firstSteps[currentCell];
+                path = BuildPath(startCell, currentCell, previousCells);
                 return true;
             }
 
@@ -121,8 +125,8 @@ public class UnitRandomAI : MonoBehaviour
 
                 if(!UnitMovementUtility.CanUnitMoveToCell(unit, neighborCell)) continue;
 
+                previousCells[neighborCell] = currentCell;
                 cellsToCheck.Enqueue(neighborCell);
-                firstSteps[neighborCell] = currentCell == startCell ? neighborCell : firstSteps[currentCell];
             }
         }
 
@@ -150,6 +154,24 @@ public class UnitRandomAI : MonoBehaviour
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// 根据前置格记录还原路径。
+    /// </summary>
+    private List<GridCell> BuildPath(GridCell startCell, GridCell targetCell, Dictionary<GridCell, GridCell> previousCells)
+    {
+        List<GridCell> path = new List<GridCell>();
+        GridCell currentCell = targetCell;
+
+        while(currentCell != startCell)
+        {
+            path.Add(currentCell);
+            currentCell = previousCells[currentCell];
+        }
+
+        path.Reverse();
+        return path;
     }
 
     /// <summary>

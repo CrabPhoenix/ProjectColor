@@ -17,11 +17,14 @@ public class TurnManager : MonoBehaviour
 
     private TurnPhase currentPhase = TurnPhase.Player;
     private bool isRunningPhase;
+    private bool isGameOver;
 
     public static TurnManager Instance => instance;
     public TurnPhase CurrentPhase => currentPhase;
+    public bool IsGameOver => isGameOver;
     public event Action<TurnPhase> OnPhaseChanged;
     public event Action<TurnPhase, float> OnPhaseNoticeRequested;
+    public event Action<GameResult> OnGameResult;
 
     /// <summary>
     /// 建立回合管理器单例。
@@ -36,6 +39,8 @@ public class TurnManager : MonoBehaviour
 
         instance = this;
         ResolveCameraController();
+        EnsureGameResultManager();
+        EnsureGameStageManager();
     }
 
     /// <summary>
@@ -50,8 +55,11 @@ public class TurnManager : MonoBehaviour
     /// <summary>
     /// 游戏开始时进入玩家阶段。
     /// </summary>
-    private void Start()
+    public void BeginGame()
     {
+        StopAllCoroutines();
+        isGameOver = false;
+        isRunningPhase = false;
         BeginPlayerPhase();
     }
 
@@ -60,8 +68,30 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public void EndPlayerPhase()
     {
+        if(isGameOver) return;
+        if(!GameStageManager.IsGameplayActive()) return;
         if(currentPhase != TurnPhase.Player || isRunningPhase) return;
         StartCoroutine(RunAutoPhases());
+    }
+
+    /// <summary>
+    /// 结束当前对局并广播胜负结果。
+    /// </summary>
+    public void EndGame(GameResult result)
+    {
+        if(isGameOver) return;
+
+        isGameOver = true;
+        isRunningPhase = false;
+        StopAllCoroutines();
+        ResolveCameraController();
+        if(cameraController != null)
+        {
+            cameraController.StopFollowing();
+            cameraController.SetManualControlEnabled(false);
+        }
+
+        OnGameResult?.Invoke(result);
     }
 
     /// <summary>
@@ -69,6 +99,9 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     private void BeginPlayerPhase()
     {
+        if(isGameOver) return;
+        if(!GameStageManager.IsGameplayActive()) return;
+
         SetPhase(TurnPhase.Player);
         ResolveCameraController();
         if(cameraController != null)
@@ -83,6 +116,9 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     private IEnumerator RunAutoPhases()
     {
+        if(isGameOver) yield break;
+        if(!GameStageManager.IsGameplayActive()) yield break;
+
         isRunningPhase = true;
         ResolveCameraController();
         if(cameraController != null)
@@ -92,8 +128,11 @@ public class TurnManager : MonoBehaviour
         }
 
         yield return RunAiPhase(TurnPhase.Ally, UnitTeam.Ally);
+        if(isGameOver) yield break;
         yield return RunAiPhase(TurnPhase.Enemy, UnitTeam.Enemy);
+        if(isGameOver) yield break;
         yield return RunAiPhase(TurnPhase.Neutral, UnitTeam.Neutral);
+        if(isGameOver) yield break;
 
         BeginPlayerPhase();
     }
@@ -103,9 +142,14 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     private IEnumerator RunAiPhase(TurnPhase phase, UnitTeam team)
     {
-        SetPhase(phase);
+        if(isGameOver) yield break;
+        if(!GameStageManager.IsGameplayActive()) yield break;
+
         UnitGridOccupancy.RebuildFromScene();
         List<Unit> units = UnitGridOccupancy.GetAliveUnits(team);
+        if(units.Count == 0) yield break;
+
+        SetPhase(phase);
         Unit firstUnit = GetFirstActingUnit(units);
         if(firstUnit != null)
         {
@@ -122,8 +166,11 @@ public class TurnManager : MonoBehaviour
             yield return new WaitForSeconds(phaseNoticeDuration);
         }
 
+        if(isGameOver) yield break;
+
         foreach(Unit unit in units)
         {
+            if(isGameOver) yield break;
             if(unit == null || !unit.IsAlive) continue;
 
             UnitRandomAI ai = unit.GetComponent<UnitRandomAI>();
@@ -137,6 +184,8 @@ public class TurnManager : MonoBehaviour
 
                 yield return ai.ActRoutine();
             }
+
+            if(isGameOver) yield break;
 
             UnitMover unitMover = unit.UnitMover;
             while(unitMover != null && unitMover.IsMoving)
@@ -195,5 +244,25 @@ public class TurnManager : MonoBehaviour
         {
             cameraController = mainCamera.gameObject.AddComponent<TurnPhaseCameraController>();
         }
+    }
+
+    /// <summary>
+    /// 确保场景中存在胜负判定管理器。
+    /// </summary>
+    private void EnsureGameResultManager()
+    {
+        if(GetComponent<GameResultManager>() != null) return;
+
+        gameObject.AddComponent<GameResultManager>();
+    }
+
+    /// <summary>
+    /// 确保场景中存在整体游戏阶段管理器。
+    /// </summary>
+    private void EnsureGameStageManager()
+    {
+        if(FindFirstObjectByType<GameStageManager>() != null) return;
+
+        gameObject.AddComponent<GameStageManager>();
     }
 }

@@ -9,7 +9,6 @@ public class PlayerMoveRangeHighlighter : MonoBehaviour
     [SerializeField] private Color highlightColor = Color.white;
     [SerializeField] private float lineWidth = 0.05f;
     [SerializeField] private int sortingOrder = 100;
-    [SerializeField] private int moveRange = 2;
 
     private readonly List<GameObject> highlightObjects = new List<GameObject>();
     private Material lineMaterial;
@@ -22,7 +21,7 @@ public class PlayerMoveRangeHighlighter : MonoBehaviour
         ClearMoveRange();
         if(unitMover == null || GridManager.Instance == null) return;
 
-        List<GridCell> movableCells = unitMover.GetMovableCells(moveRange);
+        List<GridCell> movableCells = unitMover.GetMovableCells(unitMover.MoveRange);
         foreach(GridCell cell in movableCells)
         {
             CreateCellBorder(cell);
@@ -86,4 +85,3 @@ public class PlayerMoveRangeHighlighter : MonoBehaviour
         return lineMaterial;
     }
 }
-
