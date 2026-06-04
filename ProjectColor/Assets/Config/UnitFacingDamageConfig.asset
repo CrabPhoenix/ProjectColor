@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c9e22c77f22d48b7a282bc022de1f420, type: 3}
-  m_Name: DefaultUnitDeployAreaConfig
+  m_Script: {fileID: 11500000, guid: 6cccb9c53a364dd7aa318e5f21653051, type: 3}
+  m_Name: UnitFacingDamageConfig
   m_EditorClassIdentifier: 
-  rectangleStartCell: {x: 0, y: 0}
-  rectangleEndCell: {x: 2, y: 11}
-  extraDeployableCells: []
+  frontDamageMultiplier: 1
+  sideDamageMultiplier: 1.5
+  backDamageMultiplier: 2

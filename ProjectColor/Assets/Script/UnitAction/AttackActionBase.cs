@@ -1,5 +1,7 @@
+using UnityEngine;
+
 /// <summary>
-/// 所有攻击类行动的抽象父类，统一阵营目标校验、伤害结算和行动消耗。
+/// 所有攻击类行动的抽象父类，统一阵营目标校验、伤害结算、朝向更新和行动消耗。
 /// </summary>
 public abstract class AttackActionBase : UnitActionBase
 {
@@ -15,6 +17,7 @@ public abstract class AttackActionBase : UnitActionBase
         UnitHealth targetHealth = target.GetComponent<UnitHealth>();
         if(targetHealth == null) return false;
 
+        FaceAttackTarget(actor, target);
         targetHealth.TakeDamage(new DamageInfo(actor, target, Damage, ActionName));
         MarkActionConsumed(actor);
         return true;
@@ -40,5 +43,20 @@ public abstract class AttackActionBase : UnitActionBase
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// 攻击成功时让攻击者朝向受击者所在方向。
+    /// </summary>
+    private void FaceAttackTarget(Unit actor, Unit target)
+    {
+        if(actor == null || target == null || actor.Facing == null) return;
+
+        Vector2 attackDirection = target.transform.position - actor.transform.position;
+        if(Mathf.Abs(attackDirection.x) == Mathf.Abs(attackDirection.y)) attackDirection.x += 0.01f; // 避免斜向时无法正确判断朝向
+        Direction closestDirection = UnitFacing.GetClosestDirection(attackDirection);
+        if(closestDirection == Direction.Invalid) return;
+
+        actor.Facing.Face(closestDirection);
     }
 }

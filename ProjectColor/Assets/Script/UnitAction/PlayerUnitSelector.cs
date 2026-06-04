@@ -70,6 +70,13 @@ public class PlayerUnitSelector : MonoBehaviour
 
             if(selectedUnit != null)
             {
+                if(movementController.TryUndoLastMove())
+                {
+                    RefreshMoveRange();
+                    actionController.RefreshMenu();
+                    return;
+                }
+
                 if(!movementController.CanUnitMoveThisPhase(selectedUnit))
                 {
                     ClearSelection();
@@ -234,6 +241,7 @@ public class PlayerUnitSelector : MonoBehaviour
 
         if(selectedUnit == unit && unit != null && unit.IsAlive)
         {
+            RefreshMoveRange();
             actionController.RefreshMenu();
         }
     }

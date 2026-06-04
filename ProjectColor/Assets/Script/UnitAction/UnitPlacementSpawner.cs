@@ -44,6 +44,7 @@ public class UnitPlacementSpawner : MonoBehaviour
             Vector3 spawnPosition = GridManager.Instance.GetWorldInGrid(gridCell);
             Transform parent = GetOrCreateTeamParent(cell.UnitTeam);
             Unit unit = Instantiate(cell.UnitPrefab, spawnPosition, Quaternion.identity, parent);
+            unit.Facing?.FaceTeamDefault(cell.UnitTeam);
             GameObject unitObject = unit.gameObject;
             unitObject.name = cell.UnitPrefab.name;
             if(unitObject.GetComponent<UnitPlacementSpawned>() == null)

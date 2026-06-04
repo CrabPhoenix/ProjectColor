@@ -1,5 +1,7 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// 控制玩家单位的行动菜单、行动选择和行动目标点击。
@@ -11,6 +13,8 @@ public class PlayerUnitActionController : MonoBehaviour
     [SerializeField] private PlayerInteractionRangeHighlighter interactionRangeHighlighter;
     [SerializeField] private PlayerActionCellHighlighter actionCellHighlighter;
     [SerializeField] private PlayerMoveRangeHighlighter moveRangeHighlighter;
+    [SerializeField] private UnitAttackDirectionPreview attackDirectionPreview;
+    [SerializeField] private Camera targetCamera;
     [SerializeField] private GameObject playerUnitPrefab;
 
     private readonly SwordAction swordAction = new SwordAction();
@@ -39,8 +43,19 @@ public class PlayerUnitActionController : MonoBehaviour
         if(actionCellHighlighter == null) actionCellHighlighter = GetComponent<PlayerActionCellHighlighter>();
         if(actionCellHighlighter == null) actionCellHighlighter = gameObject.AddComponent<PlayerActionCellHighlighter>();
         if(moveRangeHighlighter == null) moveRangeHighlighter = GetComponent<PlayerMoveRangeHighlighter>();
+        if(attackDirectionPreview == null) attackDirectionPreview = GetComponent<UnitAttackDirectionPreview>();
+        if(attackDirectionPreview == null) attackDirectionPreview = gameObject.AddComponent<UnitAttackDirectionPreview>();
+        ResolveTargetCamera();
         ResolvePlayerUnitPrefab();
         convertNeutralAction.SetPlayerUnitPrefab(playerUnitPrefab);
+    }
+
+    /// <summary>
+    /// 选择攻击行动时持续刷新鼠标悬停目标的受击边预览。
+    /// </summary>
+    private void Update()
+    {
+        RefreshAttackDirectionPreview();
     }
 
     /// <summary>
@@ -64,6 +79,7 @@ public class PlayerUnitActionController : MonoBehaviour
     /// </summary>
     private void OnDisable()
     {
+        UnitFacingHoverController.SetSuppressed(false);
         if(TurnManager.Instance != null && subscribedPhaseEvent)
         {
             TurnManager.Instance.OnPhaseChanged -= HandlePhaseChanged;
@@ -432,6 +448,149 @@ public class PlayerUnitActionController : MonoBehaviour
         if(actionCellHighlighter != null)
         {
             actionCellHighlighter.Clear();
+        }
+
+        if(attackDirectionPreview != null)
+        {
+            attackDirectionPreview.Clear();
+        }
+    }
+
+    /// <summary>
+    /// 根据当前鼠标悬停目标刷新攻击受击边预览。
+    /// </summary>
+    private void RefreshAttackDirectionPreview()
+    {
+        if(attackDirectionPreview == null) return;
+        if(selectedUnit == null || !IsTargetingAttack())
+        {
+            UnitFacingHoverController.SetSuppressed(false);
+            attackDirectionPreview.Clear();
+            return;
+        }
+
+        UnitFacingHoverController.SetSuppressed(true);
+        if(GridManager.Instance == null || Mouse.current == null || IsPointerOverUI())
+        {
+            attackDirectionPreview.Clear();
+            return;
+        }
+
+        if(!TryGetHoveredAttackTarget(out Unit target))
+        {
+            attackDirectionPreview.Clear();
+            return;
+        }
+
+        attackDirectionPreview.Show(selectedUnit, target);
+    }
+
+    /// <summary>
+    /// 尝试获得当前鼠标悬停且可攻击的目标单位。
+    /// </summary>
+    private bool TryGetHoveredAttackTarget(out Unit target)
+    {
+        target = null;
+        ResolveTargetCamera();
+        if(targetCamera == null || Mouse.current == null || GridManager.Instance == null) return false;
+
+        Vector3 worldPosition = GetMouseWorldPosition();
+        if(TryGetHoveredUnitFromCollider(worldPosition, out target) && CanSelectedAttackTarget(target)) return true;
+        if(TryGetHoveredUnitFromGrid(worldPosition, out target) && CanSelectedAttackTarget(target)) return true;
+
+        target = null;
+        return false;
+    }
+
+    /// <summary>
+    /// 优先通过碰撞体获得鼠标悬停单位。
+    /// </summary>
+    private bool TryGetHoveredUnitFromCollider(Vector3 worldPosition, out Unit target)
+    {
+        target = null;
+
+        Collider2D collider2D = Physics2D.OverlapPoint(worldPosition);
+        if(collider2D != null && TryResolveAliveUnit(collider2D.gameObject, out target)) return true;
+
+        Ray ray = targetCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        if(Physics.Raycast(ray, out RaycastHit hit) && TryResolveAliveUnit(hit.collider.gameObject, out target)) return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// 在没有碰撞体时通过鼠标所在格子的占用表获得单位。
+    /// </summary>
+    private bool TryGetHoveredUnitFromGrid(Vector3 worldPosition, out Unit target)
+    {
+        target = null;
+        GridCell targetCell = GridManager.Instance.GetCellFromWorldPosition(worldPosition);
+        if(!GridManager.Instance.IsValidCell(targetCell)) return false;
+
+        Vector3 cellCenter = GridManager.Instance.GetWorldInGrid(targetCell);
+        if(Mathf.Abs(worldPosition.x - cellCenter.x) > 0.5f || Mathf.Abs(worldPosition.y - cellCenter.y) > 0.5f) return false;
+
+        return UnitGridOccupancy.TryGetUnit(targetCell, out target) && target != null && target.IsAlive;
+    }
+
+    /// <summary>
+    /// 从对象或父对象中解析存活单位。
+    /// </summary>
+    private bool TryResolveAliveUnit(GameObject targetObject, out Unit target)
+    {
+        target = targetObject != null ? targetObject.GetComponentInParent<Unit>() : null;
+        return target != null && target.IsAlive && target.gameObject.activeInHierarchy;
+    }
+
+    /// <summary>
+    /// 获得鼠标当前指向的世界坐标。
+    /// </summary>
+    private Vector3 GetMouseWorldPosition()
+    {
+        Vector2 screenPosition = Mouse.current.position.ReadValue();
+        Vector3 worldPosition = targetCamera.ScreenToWorldPoint(screenPosition);
+        worldPosition.z = 0f;
+        return worldPosition;
+    }
+
+    /// <summary>
+    /// 判断当前是否正在选择攻击目标。
+    /// </summary>
+    private bool IsTargetingAttack()
+    {
+        return selectedAction == PlayerUnitActionType.Sword || selectedAction == PlayerUnitActionType.Bow;
+    }
+
+    /// <summary>
+    /// 判断当前选中攻击是否可以攻击指定目标。
+    /// </summary>
+    private bool CanSelectedAttackTarget(Unit target)
+    {
+        if(selectedAction == PlayerUnitActionType.Sword) return swordAction.CanExecute(selectedUnit, target);
+        if(selectedAction == PlayerUnitActionType.Bow) return bowAction.CanExecute(selectedUnit, target);
+
+        return false;
+    }
+
+    /// <summary>
+    /// 检查鼠标是否正指向 UI。
+    /// </summary>
+    private bool IsPointerOverUI()
+    {
+        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+    }
+
+    /// <summary>
+    /// 查找攻击目标预览使用的相机。
+    /// </summary>
+    private void ResolveTargetCamera()
+    {
+        if(targetCamera != null) return;
+
+        targetCamera = Camera.main;
+        if(targetCamera == null)
+        {
+            targetCamera = FindFirstObjectByType<Camera>();
         }
     }
 

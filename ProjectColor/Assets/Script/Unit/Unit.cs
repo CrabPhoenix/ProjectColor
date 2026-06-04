@@ -13,6 +13,7 @@ public abstract class Unit : MonoBehaviour
     private UnitMover unitMover;
     private UnitHealth unitHealth;
     private UnitActionState unitActionState;
+    private UnitFacing unitFacing;
 
     protected abstract UnitTeam NativeTeam { get; }
 
@@ -23,6 +24,7 @@ public abstract class Unit : MonoBehaviour
     public UnitMover UnitMover => unitMover;
     public UnitHealth Health => unitHealth;
     public UnitActionState ActionState => unitActionState;
+    public UnitFacing Facing => unitFacing;
     public GridCell CurrentCell => unitMover != null ? unitMover.CurrentCell : default;
     public event Action<Unit> OnAliveStateChanged;
     public event Action<Unit> OnTeamChanged;
@@ -33,6 +35,13 @@ public abstract class Unit : MonoBehaviour
     private void Awake()
     {
         unitMover = GetComponent<UnitMover>();
+        unitFacing = GetComponent<UnitFacing>();
+        if(unitFacing == null)
+        {
+            unitFacing = gameObject.AddComponent<UnitFacing>();
+        }
+        unitFacing.FaceTeamDefault(Team);
+
         unitHealth = GetComponent<UnitHealth>();
         if(unitHealth == null)
         {
@@ -49,6 +58,8 @@ public abstract class Unit : MonoBehaviour
         {
             unitActionState = gameObject.AddComponent<UnitActionState>();
         }
+
+        UnitFacingHoverController.EnsureExists();
     }
 
     /// <summary>

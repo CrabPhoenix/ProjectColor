@@ -12,12 +12,16 @@ public class GameConfigProvider : MonoBehaviour
     private const int DefaultBowDamage = 50;
     private const int DefaultBowMinRange = 2;
     private const int DefaultBowMaxRange = 3;
+    private const float DefaultFrontDamageMultiplier = 1f;
+    private const float DefaultSideDamageMultiplier = 1.5f;
+    private const float DefaultBackDamageMultiplier = 2f;
 
     private static GameConfigProvider instance;
 
     [SerializeField] private UnitStatsConfig unitStatsConfig;
     [SerializeField] private SwordAttackConfig swordAttackConfig;
     [SerializeField] private BowAttackConfig bowAttackConfig;
+    [SerializeField] private UnitFacingDamageConfig unitFacingDamageConfig;
 
     /// <summary>
     /// 建立配置提供者单例并补齐默认配置引用。
@@ -106,6 +110,23 @@ public class GameConfigProvider : MonoBehaviour
     }
 
     /// <summary>
+    /// 获得指定受击方位对应的伤害倍率。
+    /// </summary>
+    public static float GetFacingDamageMultiplier(UnitFacingSide facingSide)
+    {
+        UnitFacingDamageConfig config = GetUnitFacingDamageConfig();
+        switch(facingSide)
+        {
+            case UnitFacingSide.Front:
+                return config != null ? config.FrontDamageMultiplier : DefaultFrontDamageMultiplier;
+            case UnitFacingSide.Back:
+                return config != null ? config.BackDamageMultiplier : DefaultBackDamageMultiplier;
+            default:
+                return config != null ? config.SideDamageMultiplier : DefaultSideDamageMultiplier;
+        }
+    }
+
+    /// <summary>
     /// 获取单位属性配置。
     /// </summary>
     private static UnitStatsConfig GetUnitStatsConfig()
@@ -130,6 +151,15 @@ public class GameConfigProvider : MonoBehaviour
     {
         GameConfigProvider provider = ResolveProvider();
         return provider != null ? provider.bowAttackConfig : null;
+    }
+
+    /// <summary>
+    /// 获取单位朝向伤害倍率配置。
+    /// </summary>
+    private static UnitFacingDamageConfig GetUnitFacingDamageConfig()
+    {
+        GameConfigProvider provider = ResolveProvider();
+        return provider != null ? provider.unitFacingDamageConfig : null;
     }
 
     /// <summary>
@@ -171,6 +201,11 @@ public class GameConfigProvider : MonoBehaviour
         if(bowAttackConfig == null)
         {
             bowAttackConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<BowAttackConfig>("Assets/Config/Attack/BowAttackConfig.asset");
+        }
+
+        if(unitFacingDamageConfig == null)
+        {
+            unitFacingDamageConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<UnitFacingDamageConfig>("Assets/Config/UnitFacingDamageConfig.asset");
         }
 #endif
     }

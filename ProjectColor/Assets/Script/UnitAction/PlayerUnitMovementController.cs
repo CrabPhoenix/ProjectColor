@@ -10,6 +10,9 @@ public class PlayerUnitMovementController : MonoBehaviour
 
     private Unit selectedUnit;
     private Coroutine cameraFollowCoroutine;
+    private Unit undoUnit;
+    private GridCell undoCell;
+    private Direction undoFacing = Direction.Invalid;
 
     /// <summary>
     /// 初始化摄像机控制器引用。
@@ -24,6 +27,11 @@ public class PlayerUnitMovementController : MonoBehaviour
     /// </summary>
     public void SetSelectedUnit(Unit unit)
     {
+        if(selectedUnit != unit)
+        {
+            ClearUndoMove();
+        }
+
         selectedUnit = unit;
     }
 
@@ -33,6 +41,7 @@ public class PlayerUnitMovementController : MonoBehaviour
     public void ClearSelectedUnit()
     {
         selectedUnit = null;
+        ClearUndoMove();
     }
 
     /// <summary>
@@ -54,10 +63,14 @@ public class PlayerUnitMovementController : MonoBehaviour
         if(selectedUnit == null || GridManager.Instance == null) return false;
         if(!CanUnitMoveThisPhase(selectedUnit)) return false;
 
+        selectedUnit.UnitMover.RefreshCurrentCell();
+        GridCell startCell = selectedUnit.CurrentCell;
+        Direction startFacing = selectedUnit.Facing != null ? selectedUnit.Facing.CurrentDirection : Direction.Invalid;
         GridCell targetCell = GridManager.Instance.GetCellFromWorldPosition(worldPosition);
         bool moved = selectedUnit.UnitMover.TryMoveToCell(targetCell, selectedUnit.UnitMover.MoveRange);
         if(!moved) return false;
 
+        RecordUndoMove(selectedUnit, startCell, startFacing);
         UnitActionState actionState = selectedUnit.GetComponent<UnitActionState>();
         if(actionState != null)
         {
@@ -66,6 +79,53 @@ public class PlayerUnitMovementController : MonoBehaviour
 
         FollowCameraWhileMoving(selectedUnit);
         return true;
+    }
+
+    /// <summary>
+    /// 判断当前选中单位是否可以撤回上一次移动。
+    /// </summary>
+    public bool CanUndoLastMove()
+    {
+        if(selectedUnit == null || undoUnit != selectedUnit) return false;
+        if(selectedUnit.UnitMover == null || selectedUnit.UnitMover.IsMoving) return false;
+
+        UnitActionState actionState = selectedUnit.GetComponent<UnitActionState>();
+        return actionState != null && actionState.TurnState == UnitTurnState.MovedOnly;
+    }
+
+    /// <summary>
+    /// 尝试撤回当前选中单位本回合刚完成的移动。
+    /// </summary>
+    public bool TryUndoLastMove()
+    {
+        if(!CanUndoLastMove()) return false;
+
+        UnitActionState actionState = selectedUnit.GetComponent<UnitActionState>();
+        if(!selectedUnit.UnitMover.TryUndoMoveToCell(undoCell, undoFacing)) return false;
+
+        actionState.ClearMovedOnly();
+        ClearUndoMove();
+        return true;
+    }
+
+    /// <summary>
+    /// 清理当前记录的可撤回移动。
+    /// </summary>
+    public void ClearUndoMove()
+    {
+        undoUnit = null;
+        undoCell = default;
+        undoFacing = Direction.Invalid;
+    }
+
+    /// <summary>
+    /// 记录本次移动前的状态，用于右键撤回。
+    /// </summary>
+    private void RecordUndoMove(Unit unit, GridCell startCell, Direction startFacing)
+    {
+        undoUnit = unit;
+        undoCell = startCell;
+        undoFacing = startFacing;
     }
 
     /// <summary>

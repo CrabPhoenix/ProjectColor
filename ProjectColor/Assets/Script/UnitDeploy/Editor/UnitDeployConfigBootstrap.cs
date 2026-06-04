@@ -81,23 +81,54 @@ public static class UnitDeployConfigBootstrap
         AssetDatabase.CreateAsset(areaConfig, DeployAreaConfigPath);
 
         SerializedObject serializedObject = new SerializedObject(areaConfig);
-        SerializedProperty cellsProperty = serializedObject.FindProperty("deployableCells");
-        cellsProperty.ClearArray();
+        SerializedProperty startCellProperty = serializedObject.FindProperty("rectangleStartCell");
+        SerializedProperty endCellProperty = serializedObject.FindProperty("rectangleEndCell");
+        SerializedProperty extraCellsProperty = serializedObject.FindProperty("extraDeployableCells");
+        extraCellsProperty.ClearArray();
 
         UnitPlacementConfig placementConfig = AssetDatabase.LoadAssetAtPath<UnitPlacementConfig>(PlacementConfigPath);
-        if(placementConfig != null)
+        if(TryGetPlacementBounds(placementConfig, out Vector2Int startCell, out Vector2Int endCell))
         {
-            foreach(UnitPlacementCell cell in placementConfig.Cells)
-            {
-                int index = cellsProperty.arraySize;
-                cellsProperty.InsertArrayElementAtIndex(index);
-                SerializedProperty cellProperty = cellsProperty.GetArrayElementAtIndex(index);
-                cellProperty.vector2IntValue = cell.CellPosition;
-            }
+            startCellProperty.vector2IntValue = startCell;
+            endCellProperty.vector2IntValue = endCell;
         }
 
         serializedObject.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(areaConfig);
+    }
+
+    /// <summary>
+    /// 统计当前关卡配置中所有非负有效格子的矩形边界。
+    /// </summary>
+    private static bool TryGetPlacementBounds(UnitPlacementConfig placementConfig, out Vector2Int startCell, out Vector2Int endCell)
+    {
+        startCell = Vector2Int.zero;
+        endCell = Vector2Int.zero;
+        if(placementConfig == null) return false;
+
+        bool hasCell = false;
+        int minX = int.MaxValue;
+        int minY = int.MaxValue;
+        int maxX = int.MinValue;
+        int maxY = int.MinValue;
+
+        foreach(UnitPlacementCell cell in placementConfig.Cells)
+        {
+            Vector2Int cellPosition = cell.CellPosition;
+            if(cellPosition.x < 0 || cellPosition.y < 0) continue;
+
+            hasCell = true;
+            minX = Mathf.Min(minX, cellPosition.x);
+            minY = Mathf.Min(minY, cellPosition.y);
+            maxX = Mathf.Max(maxX, cellPosition.x);
+            maxY = Mathf.Max(maxY, cellPosition.y);
+        }
+
+        if(!hasCell) return false;
+
+        startCell = new Vector2Int(minX, minY);
+        endCell = new Vector2Int(maxX, maxY);
+        return true;
     }
 
     /// <summary>

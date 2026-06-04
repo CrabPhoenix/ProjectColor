@@ -120,10 +120,34 @@ public class UnitMover : MonoBehaviour
         if(!UnitMovementUtility.TryGetMovePath(unit, currentCell, targetCell, maxMoveDistance, out List<GridCell> movePath)) return false;
         if(!UnitGridOccupancy.MoveUnit(unit, currentCell, targetCell)) return false;
 
+        FaceLastMoveStep(movePath);
         currentCell = targetCell;
         StopAllCoroutines();
         isMoving = true;
         StartCoroutine(MoveAlongPath(movePath));
+        return true;
+    }
+
+    /// <summary>
+    /// 立即撤回移动到指定格子，并恢复指定朝向。
+    /// </summary>
+    public bool TryUndoMoveToCell(GridCell targetCell, Direction restoredFacing)
+    {
+        if(GridManager.Instance == null) return false;
+
+        RefreshCurrentCell();
+        if(!GridManager.Instance.IsCellWalkable(targetCell)) return false;
+        if(!UnitGridOccupancy.MoveUnit(unit, currentCell, targetCell)) return false;
+
+        currentCell = targetCell;
+        StopAllCoroutines();
+        isMoving = false;
+        transform.position = GridManager.Instance.GetWorldInGrid(currentCell);
+        if(restoredFacing != Direction.Invalid && unit != null && unit.Facing != null)
+        {
+            unit.Facing.Face(restoredFacing);
+        }
+
         return true;
     }
 
@@ -143,6 +167,37 @@ public class UnitMover : MonoBehaviour
     {
         if(GridManager.Instance == null) return;
         transform.position = GridManager.Instance.GetWorldInGrid(currentCell);
+    }
+
+    /// <summary>
+    /// 根据本次移动路径的最后一步更新单位朝向。
+    /// </summary>
+    private void FaceLastMoveStep(List<GridCell> movePath)
+    {
+        if(unit == null || unit.Facing == null || movePath == null || movePath.Count == 0) return;
+
+        GridCell fromCell = movePath.Count > 1 ? movePath[movePath.Count - 2] : currentCell;
+        GridCell toCell = movePath[movePath.Count - 1];
+        Direction direction = GetDirectionBetweenCells(fromCell, toCell);
+        if(direction == Direction.Invalid) return;
+
+        unit.Facing.Face(direction);
+    }
+
+    /// <summary>
+    /// 根据相邻格子的坐标差获得移动方向。
+    /// </summary>
+    private Direction GetDirectionBetweenCells(GridCell fromCell, GridCell toCell)
+    {
+        int deltaX = toCell.X - fromCell.X;
+        int deltaY = toCell.Y - fromCell.Y;
+
+        if(deltaX == 1 && deltaY == 0) return Direction.Right;
+        if(deltaX == -1 && deltaY == 0) return Direction.Left;
+        if(deltaX == 0 && deltaY == 1) return Direction.Up;
+        if(deltaX == 0 && deltaY == -1) return Direction.Down;
+
+        return Direction.Invalid;
     }
 
     /// <summary>

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0f4a6b1a4224b8bb1fd120dcbabbe8a, type: 3}
   m_Name: SwordAttackConfig
   m_EditorClassIdentifier: 
-  damage: 100
+  damage: 50
   range: 2

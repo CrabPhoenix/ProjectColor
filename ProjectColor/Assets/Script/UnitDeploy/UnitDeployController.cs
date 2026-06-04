@@ -12,6 +12,7 @@ public class UnitDeployController : MonoBehaviour
     [SerializeField] private UnitDeployConfig deployConfig;
     [SerializeField] private UnitDeployAreaConfig deployAreaConfig;
     [SerializeField] private UnitDeployUI deployUI;
+    [SerializeField] private UnitDeployAreaHighlighter deployAreaHighlighter;
     [SerializeField] private Camera targetCamera;
 
     private readonly Dictionary<Unit, int> inventory = new Dictionary<Unit, int>();
@@ -137,9 +138,11 @@ public class UnitDeployController : MonoBehaviour
         {
             BuildInventory();
             RefreshUI();
+            deployAreaHighlighter?.Show(deployAreaConfig);
         }
         else
         {
+            deployAreaHighlighter?.Hide();
             CancelSelection();
         }
     }
@@ -237,9 +240,11 @@ public class UnitDeployController : MonoBehaviour
 
         Vector3 spawnPosition = GridManager.Instance.GetWorldInGrid(targetCell);
         Unit unit = Instantiate(selectedPrefab, spawnPosition, Quaternion.identity, GetPlayerUnitParent());
+        unit.Facing?.FaceTeamDefault(UnitTeam.Player);
         unit.name = selectedPrefab.name;
         inventory[selectedPrefab] = count - 1;
         UnitGridOccupancy.RegisterUnit(unit, targetCell);
+        deployAreaHighlighter?.RefreshCells();
         RefreshUI();
 
         if(inventory[selectedPrefab] <= 0)
@@ -264,6 +269,7 @@ public class UnitDeployController : MonoBehaviour
 
         UnitGridOccupancy.UnregisterUnit(placedUnit);
         Destroy(placedUnit.gameObject);
+        deployAreaHighlighter?.RefreshCells();
         inventory[prefab] = inventory.TryGetValue(prefab, out int count) ? count + 1 : 1;
         selectedPrefab = prefab;
         EnsurePreviewObject();
@@ -435,6 +441,8 @@ public class UnitDeployController : MonoBehaviour
     {
         if(stageManager == null) stageManager = FindFirstObjectByType<GameStageManager>();
         if(deployUI == null) deployUI = GetComponent<UnitDeployUI>();
+        if(deployAreaHighlighter == null) deployAreaHighlighter = GetComponent<UnitDeployAreaHighlighter>();
+        if(deployAreaHighlighter == null) deployAreaHighlighter = gameObject.AddComponent<UnitDeployAreaHighlighter>();
         if(targetCamera == null) targetCamera = Camera.main;
     }
 

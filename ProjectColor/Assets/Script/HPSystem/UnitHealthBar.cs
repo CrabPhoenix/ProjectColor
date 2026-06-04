@@ -53,6 +53,17 @@ public class UnitHealthBar : MonoBehaviour
     }
 
     /// <summary>
+    /// 保持生命值文本始终位于单位世界坐标上方，避免受单位朝向旋转影响。
+    /// </summary>
+    private void LateUpdate()
+    {
+        if(healthText == null) return;
+
+        healthText.transform.position = transform.position + localOffset;
+        healthText.transform.rotation = Quaternion.identity;
+    }
+
+    /// <summary>
     /// 创建头顶生命值文本。
     /// </summary>
     private void CreateHealthText()

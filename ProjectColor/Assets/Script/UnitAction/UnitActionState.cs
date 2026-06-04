@@ -65,6 +65,17 @@ public class UnitActionState : MonoBehaviour
     }
 
     /// <summary>
+    /// 在单位只移动且尚未行动时撤销移动状态。
+    /// </summary>
+    public void ClearMovedOnly()
+    {
+        if(turnState == UnitTurnState.MovedOnly)
+        {
+            turnState = UnitTurnState.Ready;
+        }
+    }
+
+    /// <summary>
     /// 标记本阶段已经执行行动。
     /// </summary>
     public void MarkActed()

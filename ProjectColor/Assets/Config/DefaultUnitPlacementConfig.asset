@@ -62,8 +62,8 @@ MonoBehaviour:
     unitTeam: -1
     unitPrefab: {fileID: 0}
   - cellPosition: {x: 1, y: 4}
-    unitTeam: 2
-    unitPrefab: {fileID: 800300000001, guid: 1ecff609d16bab7488266e8a1a4c6f91, type: 3}
+    unitTeam: -1
+    unitPrefab: {fileID: 0}
   - cellPosition: {x: 1, y: 5}
     unitTeam: -1
     unitPrefab: {fileID: 0}
@@ -101,8 +101,8 @@ MonoBehaviour:
     unitTeam: -1
     unitPrefab: {fileID: 0}
   - cellPosition: {x: 2, y: 5}
-    unitTeam: 1
-    unitPrefab: {fileID: 800200000001, guid: db2bb2299309cfd4a9253dd11b9e03e0, type: 3}
+    unitTeam: -1
+    unitPrefab: {fileID: 0}
   - cellPosition: {x: 2, y: 6}
     unitTeam: -1
     unitPrefab: {fileID: 0}
