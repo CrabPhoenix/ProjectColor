@@ -2,21 +2,23 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 控制标题界面的开始游戏和退出游戏按钮。
+/// 控制标题界面的开始游戏、游戏规则和退出游戏按钮。
 /// </summary>
 public class TitleMenuUI : MonoBehaviour
 {
     [SerializeField] private GameStageManager stageManager;
     [SerializeField] private Button startGameButton;
+    [SerializeField] private Button gameRuleButton;
     [SerializeField] private Button exitGameButton;
 
     /// <summary>
     /// 设置标题界面所需引用。
     /// </summary>
-    public void SetReferences(GameStageManager manager, Button startButton, Button exitButton)
+    public void SetReferences(GameStageManager manager, Button startButton, Button ruleButton, Button exitButton)
     {
         stageManager = manager;
         startGameButton = startButton;
+        gameRuleButton = ruleButton;
         exitGameButton = exitButton;
         BindButtons();
     }
@@ -35,6 +37,7 @@ public class TitleMenuUI : MonoBehaviour
     private void OnDisable()
     {
         if(startGameButton != null) startGameButton.onClick.RemoveListener(HandleStartGame);
+        if(gameRuleButton != null) gameRuleButton.onClick.RemoveListener(HandleShowGameRules);
         if(exitGameButton != null) exitGameButton.onClick.RemoveListener(HandleExitGame);
     }
 
@@ -57,10 +60,27 @@ public class TitleMenuUI : MonoBehaviour
             startGameButton.onClick.AddListener(HandleStartGame);
         }
 
+        if(gameRuleButton != null)
+        {
+            gameRuleButton.onClick.RemoveListener(HandleShowGameRules);
+            gameRuleButton.onClick.AddListener(HandleShowGameRules);
+        }
+
         if(exitGameButton != null)
         {
             exitGameButton.onClick.RemoveListener(HandleExitGame);
             exitGameButton.onClick.AddListener(HandleExitGame);
+        }
+    }
+
+    /// <summary>
+    /// 处理游戏规则按钮。
+    /// </summary>
+    private void HandleShowGameRules()
+    {
+        if(stageManager != null)
+        {
+            stageManager.ShowGameRules();
         }
     }
 

@@ -201,9 +201,9 @@ public class UnitPlacementConfigEditor : Editor
         foreach(GridObject gridObject in gridObjects)
         {
             if(gridObject == null) continue;
-            if(gridObject.type != GridObjectType.Path && gridObject.type != GridObjectType.Chamber) continue;
-
             GridCell gridCell = gridObject.GetCellPosion();
+            if(!gridManager.IsCellWalkable(gridCell)) continue;
+
             Vector2Int cellPosition = new Vector2Int(gridCell.X, gridCell.Y);
 
             if(unitCells.TryGetValue(cellPosition, out UnitPlacementCell sceneUnitCell))

@@ -50,9 +50,9 @@ public class GridUnitDebug : MonoBehaviour
         foreach(GridObject gridObject in gridObjects)
         {
             if(gridObject == null) continue;
-            if(gridObject.type != GridObjectType.Path && gridObject.type != GridObjectType.Chamber) continue;
-
             GridCell cell = gridObject.GetCellPosion();
+            if(!gridManager.IsCellWalkable(cell)) continue;
+
             bool hasUnit = UnitGridOccupancy.TryGetUnit(cell, out Unit unit);
             if(showOnlyOccupiedCells && !hasUnit) continue;
 

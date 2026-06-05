@@ -20,6 +20,7 @@ public class GameStageManager : MonoBehaviour
     [SerializeField] private TurnPhaseCameraController cameraController;
     [SerializeField] private Canvas gameCanvas;
     [SerializeField] private TitleMenuUI titleMenuUI;
+    [SerializeField] private GameRuleMenuUI gameRuleMenuUI;
     [SerializeField] private SettlementMenuUI settlementMenuUI;
     [SerializeField] private UnitDeployUI unitDeployUI;
     [SerializeField] private UnitDeployController unitDeployController;
@@ -200,6 +201,42 @@ public class GameStageManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 在标题阶段显示游戏规则界面。
+    /// </summary>
+    public void ShowGameRules()
+    {
+        if(currentStage != GameStage.Title) return;
+
+        if(titleMenuUI != null)
+        {
+            titleMenuUI.SetVisible(false);
+        }
+
+        if(gameRuleMenuUI != null)
+        {
+            gameRuleMenuUI.SetVisible(true);
+        }
+    }
+
+    /// <summary>
+    /// 隐藏游戏规则界面并回到标题界面。
+    /// </summary>
+    public void HideGameRules()
+    {
+        if(currentStage != GameStage.Title) return;
+
+        if(gameRuleMenuUI != null)
+        {
+            gameRuleMenuUI.SetVisible(false);
+        }
+
+        if(titleMenuUI != null)
+        {
+            titleMenuUI.SetVisible(true);
+        }
+    }
+
+    /// <summary>
     /// 判断当前是否处于游戏阶段。
     /// </summary>
     public static bool IsGameplayActive()
@@ -250,6 +287,11 @@ public class GameStageManager : MonoBehaviour
         if(titleMenuUI != null)
         {
             titleMenuUI.SetVisible(stage == GameStage.Title);
+        }
+
+        if(gameRuleMenuUI != null)
+        {
+            gameRuleMenuUI.SetVisible(false);
         }
 
         if(settlementMenuUI != null)
@@ -455,15 +497,11 @@ public class GameStageManager : MonoBehaviour
             if(canvasObject.GetComponent<GraphicRaycaster>() == null) canvasObject.AddComponent<GraphicRaycaster>();
         }
 
-        if(titleMenuUI == null)
-        {
-            titleMenuUI = CreateTitleMenu();
-        }
+        titleMenuUI = CreateTitleMenu();
 
-        if(settlementMenuUI == null)
-        {
-            settlementMenuUI = CreateSettlementMenu();
-        }
+        gameRuleMenuUI = CreateGameRuleMenu();
+
+        settlementMenuUI = CreateSettlementMenu();
 
         unitDeployUI = CreateDeployMenu();
         if(unitDeployUI == null) return;
@@ -485,12 +523,43 @@ public class GameStageManager : MonoBehaviour
     private TitleMenuUI CreateTitleMenu()
     {
         Transform panel = FindOrCreatePanel("TitlePanel");
-        Button startButton = CreateButton(panel, "StartGameButton", "开始游戏", new Vector2(0f, 90f));
-        Button exitButton = CreateButton(panel, "ExitGameButton", "退出游戏", new Vector2(0f, -90f));
+        if(!IsUnityObjectAlive(panel)) return null;
+
+        Button startButton = CreateButton(panel, "StartGameButton", "开始游戏", new Vector2(0f, 120f));
+        Button ruleButton = CreateButton(panel, "GameRuleButton", "游戏规则", new Vector2(0f, 0f));
+        Button exitButton = CreateButton(panel, "ExitGameButton", "退出游戏", new Vector2(0f, -120f));
 
         TitleMenuUI ui = panel.GetComponent<TitleMenuUI>();
         if(ui == null) ui = panel.gameObject.AddComponent<TitleMenuUI>();
-        ui.SetReferences(this, startButton, exitButton);
+        ui.SetReferences(this, startButton, ruleButton, exitButton);
+        return ui;
+    }
+
+    /// <summary>
+    /// 创建游戏规则界面。
+    /// </summary>
+    private GameRuleMenuUI CreateGameRuleMenu()
+    {
+        Transform panel = FindOrCreatePanel("GameRulePanel");
+        if(!IsUnityObjectAlive(panel)) return null;
+
+        RectTransform background = FindOrCreateChildRect(panel, "RuleBackground", out bool createdBackground);
+        if(!IsUnityObjectAlive(background)) return null;
+
+        ApplyDefaultRect(background, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(600f, 400f), createdBackground || background.sizeDelta == new Vector2(960f, 620f));
+
+        Image backgroundImage = background.GetComponent<Image>();
+        if(backgroundImage == null) backgroundImage = background.gameObject.AddComponent<Image>();
+        backgroundImage.color = new Color(0.22f, 0.22f, 0.22f, 0.96f);
+
+        CreateText(background, "TitleText", "游戏规则", 52, Color.white, new Vector2(0f, 250f), new Vector2(860f, 70f));
+        Text ruleText = CreateText(background, "RuleText", "在这里填写游戏规则。", 30, Color.white, new Vector2(0f, 35f), new Vector2(820f, 350f));
+        Button understandButton = CreateDialogButton(background, "UnderstandButton", "了解", new Vector2(0f, -245f));
+
+        GameRuleMenuUI ui = panel.GetComponent<GameRuleMenuUI>();
+        if(ui == null) ui = panel.gameObject.AddComponent<GameRuleMenuUI>();
+        ui.SetReferences(this, ruleText, understandButton);
+        panel.gameObject.SetActive(false);
         return ui;
     }
 
@@ -500,6 +569,8 @@ public class GameStageManager : MonoBehaviour
     private SettlementMenuUI CreateSettlementMenu()
     {
         Transform panel = FindOrCreatePanel("SettlementPanel");
+        if(!IsUnityObjectAlive(panel)) return null;
+
         Text resultText = CreateText(panel, "ResultText", "Victory", 80, Color.white, new Vector2(0f, 160f), new Vector2(560f, 100f));
         Button restartButton = CreateButton(panel, "RestartGameButton", "重启游戏", new Vector2(0f, 20f));
         Button titleButton = CreateButton(panel, "BackToTitleButton", "回到标题界面", new Vector2(0f, -120f));
@@ -516,24 +587,21 @@ public class GameStageManager : MonoBehaviour
     private UnitDeployUI CreateDeployMenu()
     {
         Transform panel = FindOrCreatePanel("DeploymentPanel");
+        if(!IsUnityObjectAlive(panel)) return null;
 
-        RectTransform warehousePanel = FindOrCreateChildRect(panel, "WarehousePanel");
-        warehousePanel.anchorMin = new Vector2(0f, 0f);
-        warehousePanel.anchorMax = new Vector2(1f, 0f);
-        warehousePanel.pivot = new Vector2(0.5f, 0f);
-        warehousePanel.anchoredPosition = Vector2.zero;
-        warehousePanel.sizeDelta = new Vector2(0f, 120f);
+        RectTransform warehousePanel = FindOrCreateChildRect(panel, "WarehousePanel", out bool createdWarehousePanel);
+        if(!IsUnityObjectAlive(warehousePanel)) return null;
+
+        ApplyDefaultRect(warehousePanel, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), Vector2.zero, new Vector2(0f, 120f), createdWarehousePanel);
 
         Image warehouseImage = warehousePanel.GetComponent<Image>();
         if(warehouseImage == null) warehouseImage = warehousePanel.gameObject.AddComponent<Image>();
         warehouseImage.color = new Color(0.25f, 0.25f, 0.25f, 0.62f);
 
-        RectTransform itemRoot = FindOrCreateChildRect(warehousePanel, "ItemRoot");
-        itemRoot.anchorMin = new Vector2(0.5f, 0.5f);
-        itemRoot.anchorMax = new Vector2(0.5f, 0.5f);
-        itemRoot.pivot = new Vector2(0.5f, 0.5f);
-        itemRoot.anchoredPosition = Vector2.zero;
-        itemRoot.sizeDelta = new Vector2(760f, 88f);
+        RectTransform itemRoot = FindOrCreateChildRect(warehousePanel, "ItemRoot", out bool createdItemRoot);
+        if(!IsUnityObjectAlive(itemRoot)) return null;
+
+        ApplyDefaultRect(itemRoot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760f, 88f), createdItemRoot);
 
         HorizontalLayoutGroup layoutGroup = itemRoot.GetComponent<HorizontalLayoutGroup>();
         if(layoutGroup == null) layoutGroup = itemRoot.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -559,12 +627,14 @@ public class GameStageManager : MonoBehaviour
     /// </summary>
     private RectTransform CreateRemainingUnitsDialog(Transform parent, out Text messageText, out Button confirmButton, out Button continueButton)
     {
-        RectTransform dialog = FindOrCreateChildRect(parent, "RemainingUnitsDialog");
-        dialog.anchorMin = new Vector2(0.5f, 0.5f);
-        dialog.anchorMax = new Vector2(0.5f, 0.5f);
-        dialog.pivot = new Vector2(0.5f, 0.5f);
-        dialog.anchoredPosition = Vector2.zero;
-        dialog.sizeDelta = new Vector2(460f, 180f);
+        messageText = null;
+        confirmButton = null;
+        continueButton = null;
+
+        RectTransform dialog = FindOrCreateChildRect(parent, "RemainingUnitsDialog", out bool createdDialog);
+        if(!IsUnityObjectAlive(dialog)) return null;
+
+        ApplyDefaultRect(dialog, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(460f, 180f), createdDialog);
 
         Image dialogImage = dialog.GetComponent<Image>();
         if(dialogImage == null) dialogImage = dialog.gameObject.AddComponent<Image>();
@@ -582,20 +652,37 @@ public class GameStageManager : MonoBehaviour
     /// </summary>
     private Transform FindOrCreatePanel(string panelName)
     {
-        Transform panel = gameCanvas.transform.Find(panelName);
+        if(!IsUnityObjectAlive(gameCanvas))
+        {
+            gameCanvas = null;
+            return null;
+        }
+
+        Transform canvasTransform = gameCanvas.transform;
+        if(!IsUnityObjectAlive(canvasTransform)) return null;
+
+        Transform panel = canvasTransform.Find(panelName);
+        bool createdPanel = panel == null;
         if(panel == null)
         {
             GameObject panelObject = new GameObject(panelName);
-            panelObject.transform.SetParent(gameCanvas.transform, false);
+            panelObject.transform.SetParent(canvasTransform, false);
             panel = panelObject.transform;
         }
 
+        if(!IsUnityObjectAlive(panel)) return null;
+
         RectTransform rectTransform = panel.GetComponent<RectTransform>();
+        bool createdRect = rectTransform == null;
         if(rectTransform == null) rectTransform = panel.gameObject.AddComponent<RectTransform>();
-        rectTransform.anchorMin = Vector2.zero;
-        rectTransform.anchorMax = Vector2.one;
-        rectTransform.offsetMin = Vector2.zero;
-        rectTransform.offsetMax = Vector2.zero;
+        if(createdPanel || createdRect)
+        {
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+        }
+
         return panel;
     }
 
@@ -604,17 +691,60 @@ public class GameStageManager : MonoBehaviour
     /// </summary>
     private RectTransform FindOrCreateChildRect(Transform parent, string childName)
     {
+        return FindOrCreateChildRect(parent, childName, out _);
+    }
+
+    /// <summary>
+    /// 查找或创建指定父物体下的 RectTransform 子物体，并返回是否为新创建对象。
+    /// </summary>
+    private RectTransform FindOrCreateChildRect(Transform parent, string childName, out bool created)
+    {
+        created = false;
+        if(!IsUnityObjectAlive(parent)) return null;
+
         Transform child = parent.Find(childName);
         if(child == null)
         {
             GameObject childObject = new GameObject(childName);
             childObject.transform.SetParent(parent, false);
             child = childObject.transform;
+            created = true;
         }
+
+        if(!IsUnityObjectAlive(child)) return null;
 
         RectTransform rectTransform = child.GetComponent<RectTransform>();
         if(rectTransform == null) rectTransform = child.gameObject.AddComponent<RectTransform>();
         return rectTransform;
+    }
+
+    /// <summary>
+    /// 只在需要初始化时设置默认 UI 布局，避免覆盖用户手动调整的 RectTransform。
+    /// </summary>
+    private void ApplyDefaultRect(RectTransform rectTransform, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta, bool shouldApply)
+    {
+        if(!shouldApply || !IsUnityObjectAlive(rectTransform)) return;
+
+        rectTransform.anchorMin = anchorMin;
+        rectTransform.anchorMax = anchorMax;
+        rectTransform.pivot = pivot;
+        rectTransform.anchoredPosition = anchoredPosition;
+        rectTransform.sizeDelta = sizeDelta;
+    }
+
+    /// <summary>
+    /// 判断 Unity 对象是否仍然有效，避免编辑器延迟回调访问已销毁对象。
+    /// </summary>
+    private bool IsUnityObjectAlive(UnityEngine.Object unityObject)
+    {
+        try
+        {
+            return unityObject != null;
+        }
+        catch(MissingReferenceException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -623,16 +753,13 @@ public class GameStageManager : MonoBehaviour
     private Button CreateButton(Transform parent, string objectName, string label, Vector2 anchoredPosition)
     {
         Transform existingButton = parent.Find(objectName);
+        bool createdButton = existingButton == null;
         GameObject buttonObject = existingButton != null ? existingButton.gameObject : new GameObject(objectName);
         buttonObject.transform.SetParent(parent, false);
 
         RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
         if(buttonRect == null) buttonRect = buttonObject.AddComponent<RectTransform>();
-        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
-        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
-        buttonRect.pivot = new Vector2(0.5f, 0.5f);
-        buttonRect.anchoredPosition = anchoredPosition;
-        buttonRect.sizeDelta = new Vector2(520f, 96f);
+        ApplyDefaultRect(buttonRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), anchoredPosition, new Vector2(520f, 96f), createdButton);
 
         Image image = buttonObject.GetComponent<Image>();
         if(image == null) image = buttonObject.AddComponent<Image>();
@@ -642,12 +769,16 @@ public class GameStageManager : MonoBehaviour
         if(button == null) button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
 
+        bool createdText = buttonObject.transform.Find("Text") == null;
         Text text = CreateText(buttonObject.transform, "Text", label, 60, Color.white, Vector2.zero, Vector2.zero);
         RectTransform textRect = text.GetComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
+        if(createdText)
+        {
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+        }
         return button;
     }
 
@@ -657,16 +788,13 @@ public class GameStageManager : MonoBehaviour
     private Button CreateSmallButton(Transform parent, string objectName, string label, Vector2 anchoredPosition)
     {
         Transform existingButton = parent.Find(objectName);
+        bool createdButton = existingButton == null;
         GameObject buttonObject = existingButton != null ? existingButton.gameObject : new GameObject(objectName);
         buttonObject.transform.SetParent(parent, false);
 
         RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
         if(buttonRect == null) buttonRect = buttonObject.AddComponent<RectTransform>();
-        buttonRect.anchorMin = new Vector2(0.5f, 0f);
-        buttonRect.anchorMax = new Vector2(0.5f, 0f);
-        buttonRect.pivot = new Vector2(0.5f, 0f);
-        buttonRect.anchoredPosition = anchoredPosition;
-        buttonRect.sizeDelta = new Vector2(180f, 44f);
+        ApplyDefaultRect(buttonRect, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), anchoredPosition, new Vector2(180f, 44f), createdButton);
 
         Image image = buttonObject.GetComponent<Image>();
         if(image == null) image = buttonObject.AddComponent<Image>();
@@ -676,12 +804,16 @@ public class GameStageManager : MonoBehaviour
         if(button == null) button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
 
+        bool createdText = buttonObject.transform.Find("Text") == null;
         Text text = CreateText(buttonObject.transform, "Text", label, 24, Color.white, Vector2.zero, Vector2.zero);
         RectTransform textRect = text.GetComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
+        if(createdText)
+        {
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+        }
         return button;
     }
 
@@ -691,16 +823,13 @@ public class GameStageManager : MonoBehaviour
     private Button CreateDialogButton(Transform parent, string objectName, string label, Vector2 anchoredPosition)
     {
         Transform existingButton = parent.Find(objectName);
+        bool createdButton = existingButton == null;
         GameObject buttonObject = existingButton != null ? existingButton.gameObject : new GameObject(objectName);
         buttonObject.transform.SetParent(parent, false);
 
         RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
         if(buttonRect == null) buttonRect = buttonObject.AddComponent<RectTransform>();
-        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
-        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
-        buttonRect.pivot = new Vector2(0.5f, 0.5f);
-        buttonRect.anchoredPosition = anchoredPosition;
-        buttonRect.sizeDelta = new Vector2(150f, 44f);
+        ApplyDefaultRect(buttonRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), anchoredPosition, new Vector2(150f, 44f), createdButton);
 
         Image image = buttonObject.GetComponent<Image>();
         if(image == null) image = buttonObject.AddComponent<Image>();
@@ -710,12 +839,16 @@ public class GameStageManager : MonoBehaviour
         if(button == null) button = buttonObject.AddComponent<Button>();
         button.targetGraphic = image;
 
+        bool createdText = buttonObject.transform.Find("Text") == null;
         Text text = CreateText(buttonObject.transform, "Text", label, 24, Color.white, Vector2.zero, Vector2.zero);
         RectTransform textRect = text.GetComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
+        if(createdText)
+        {
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+        }
         return button;
     }
 
@@ -725,24 +858,23 @@ public class GameStageManager : MonoBehaviour
     private Text CreateText(Transform parent, string objectName, string content, int fontSize, Color color, Vector2 anchoredPosition, Vector2 size)
     {
         Transform existingText = parent.Find(objectName);
+        bool createdTextObject = existingText == null;
         GameObject textObject = existingText != null ? existingText.gameObject : new GameObject(objectName);
         textObject.transform.SetParent(parent, false);
 
         RectTransform textRect = textObject.GetComponent<RectTransform>();
+        bool createdRect = textRect == null;
         if(textRect == null) textRect = textObject.AddComponent<RectTransform>();
-        textRect.anchorMin = new Vector2(0.5f, 0.5f);
-        textRect.anchorMax = new Vector2(0.5f, 0.5f);
-        textRect.pivot = new Vector2(0.5f, 0.5f);
-        textRect.anchoredPosition = anchoredPosition;
-        if(size != Vector2.zero)
-        {
-            textRect.sizeDelta = size;
-        }
+        ApplyDefaultRect(textRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), anchoredPosition, size, createdTextObject || createdRect);
 
         Text text = textObject.GetComponent<Text>();
-        if(text == null) text = textObject.AddComponent<Text>();
+        if(text == null)
+        {
+            text = textObject.AddComponent<Text>();
+            text.alignment = TextAnchor.MiddleCenter;
+        }
+
         text.text = content;
-        text.alignment = TextAnchor.MiddleCenter;
         text.color = color;
         text.fontSize = fontSize;
         text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

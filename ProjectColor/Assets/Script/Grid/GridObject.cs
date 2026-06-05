@@ -9,6 +9,7 @@ public class GridObject
 
     public GridCell GetCellPosion() => cell_position;
     public GridObjectType type = GridObjectType.Empty;
+    public TerrainType terrainType = TerrainType.None;
 
 
     public GridObject(GridCell cell_position)

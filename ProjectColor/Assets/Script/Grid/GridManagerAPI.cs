@@ -30,8 +30,7 @@ public partial class GridManager
     public bool IsPlayerNeighborCellWalkable(Vector3 current_position, Vector2 move_direction)
     {
         GridCell neighbor_cell = GetNeighborCell(current_position, move_direction);
-        GridObject gridObject = grid.GetGridObjects()[neighbor_cell.X, neighbor_cell.Y];
-        return gridObject.type == GridObjectType.Path;
+        return IsCellWalkable(neighbor_cell);
     }
 
     /// <summary>
@@ -40,8 +39,7 @@ public partial class GridManager
     public bool IsNPCNeighborCellWalkable(Vector3 current_position, Vector2 move_direction)
     {
         GridCell neighbor_cell = GetNeighborCell(current_position, move_direction);
-        GridObject gridObject = grid.GetGridObjects()[neighbor_cell.X, neighbor_cell.Y];
-        return gridObject.type == GridObjectType.Path || gridObject.type == GridObjectType.Chamber;
+        return IsCellWalkable(neighbor_cell);
     }
 
     /// <summary>
@@ -119,7 +117,7 @@ public partial class GridManager
         if(!IsValidCell(gridCell)) return false;
 
         GridObject gridObject = grid.GetGridObjects()[gridCell.X, gridCell.Y];
-        return gridObject.type == GridObjectType.Path || gridObject.type == GridObjectType.Chamber;
+        return gridObject.terrainType == TerrainType.Plate || gridObject.terrainType == TerrainType.Slope;
     }
 
     /// <summary>
@@ -137,5 +135,14 @@ public partial class GridManager
     {
         if(!IsValidCell(gridCell)) return null;
         return grid.GetGridObjects()[gridCell.X, gridCell.Y];
+    }
+
+    /// <summary>
+    /// 获得指定格子当前记录的地形类型。
+    /// </summary>
+    public TerrainType GetTerrainType(GridCell gridCell)
+    {
+        GridObject gridObject = GetGridObject(gridCell);
+        return gridObject != null ? gridObject.terrainType : TerrainType.None;
     }
 }

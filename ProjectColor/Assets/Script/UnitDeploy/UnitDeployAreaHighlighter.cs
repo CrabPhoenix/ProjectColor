@@ -16,7 +16,20 @@ public class UnitDeployAreaHighlighter : MonoBehaviour
     private UnitDeployAreaConfig areaConfig;
     private Material highlightMaterial;
     private Mesh quadMesh;
+    private Transform highlightRoot;
     private bool isVisible;
+
+    /// <summary>
+    /// 销毁时清理部署范围高亮根物体。
+    /// </summary>
+    private void OnDestroy()
+    {
+        Clear();
+        if(highlightRoot != null)
+        {
+            Destroy(highlightRoot.gameObject);
+        }
+    }
 
     /// <summary>
     /// 每帧更新闪烁颜色和占格显示状态。
@@ -67,7 +80,11 @@ public class UnitDeployAreaHighlighter : MonoBehaviour
             if(UnitGridOccupancy.IsCellOccupied(cell)) continue;
 
             visibleCells.Add(cell);
-            if(cellObjects.ContainsKey(cell)) continue;
+            if(cellObjects.TryGetValue(cell, out GameObject existingObject))
+            {
+                AlignCellObject(existingObject, cell);
+                continue;
+            }
 
             cellObjects.Add(cell, CreateCellObject(cell));
         }
@@ -110,8 +127,8 @@ public class UnitDeployAreaHighlighter : MonoBehaviour
     private GameObject CreateCellObject(GridCell cell)
     {
         GameObject cellObject = new GameObject($"DeployArea_{cell.X}_{cell.Y}");
-        cellObject.transform.SetParent(transform);
-        cellObject.transform.position = GridManager.Instance.GetWorldInGrid(cell);
+        cellObject.transform.SetParent(GetHighlightRoot(), false);
+        AlignCellObject(cellObject, cell);
 
         MeshFilter meshFilter = cellObject.AddComponent<MeshFilter>();
         meshFilter.sharedMesh = GetQuadMesh();
@@ -121,6 +138,34 @@ public class UnitDeployAreaHighlighter : MonoBehaviour
         meshRenderer.sortingOrder = sortingOrder;
 
         return cellObject;
+    }
+
+    /// <summary>
+    /// 将部署范围高亮对象对齐到格子中心的世界坐标。
+    /// </summary>
+    private void AlignCellObject(GameObject cellObject, GridCell cell)
+    {
+        if(cellObject == null || GridManager.Instance == null) return;
+
+        Transform cellTransform = cellObject.transform;
+        cellTransform.position = GridManager.Instance.GetWorldInGrid(cell);
+        cellTransform.rotation = Quaternion.identity;
+        cellTransform.localScale = Vector3.one;
+    }
+
+    /// <summary>
+    /// 获得独立的世界空间高亮根物体，避免被 UI 或控制器父物体影响位置。
+    /// </summary>
+    private Transform GetHighlightRoot()
+    {
+        if(highlightRoot != null) return highlightRoot;
+
+        GameObject rootObject = new GameObject("UnitDeployAreaHighlights");
+        rootObject.transform.position = Vector3.zero;
+        rootObject.transform.rotation = Quaternion.identity;
+        rootObject.transform.localScale = Vector3.one;
+        highlightRoot = rootObject.transform;
+        return highlightRoot;
     }
 
     /// <summary>

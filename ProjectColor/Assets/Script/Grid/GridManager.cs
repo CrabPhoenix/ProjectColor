@@ -47,22 +47,27 @@ public partial class GridManager : MonoBehaviour
             int val_y = Mathf.FloorToInt(world_position.y);
             TileBase tile = tilemap.GetTile(new Vector3Int(val_x, val_y , 0));
 
+            gridObject.type = GridObjectType.Empty;
+            gridObject.terrainType = TerrainType.None;
             if(tile == null) continue;
 
             //获得并转化其类型
             Type tile_type = tile.GetType();
 
-            if(tile_type == typeof(WallTile))
-            {
-                gridObject.type = GridObjectType.Wall;
-            }
-            if(tile_type == typeof(PathTile))
+            if(tile_type == typeof(PlateTile))
             {
                 gridObject.type = GridObjectType.Path;
+                gridObject.terrainType = TerrainType.Plate;
             }
-            if(tile_type == typeof(ChamberTile))
+            else if(tile_type == typeof(WaterTile))
             {
-                gridObject.type = GridObjectType.Chamber;
+                gridObject.type = GridObjectType.Wall;
+                gridObject.terrainType = TerrainType.Water;
+            }
+            else if(tile_type == typeof(SlopeTile))
+            {
+                gridObject.type = GridObjectType.Path;
+                gridObject.terrainType = TerrainType.Slope;
             }
         }
     }
@@ -101,20 +106,25 @@ public partial class GridManager : MonoBehaviour
             GUIStyle text_style = new GUIStyle();
             text_style.alignment = TextAnchor.MiddleCenter;
 
-            if(gridObject.type == GridObjectType.Wall)
+            if(gridObject.terrainType == TerrainType.Water)
             {
-                text_style.normal.textColor = Color.yellow;
-                Handles.Label(cell_center, $"Wall", text_style);
+                text_style.normal.textColor = Color.blue;
+                Handles.Label(cell_center, $"({current_cell.X}, {current_cell.Y})", text_style);
             }
-            else if(gridObject.type == GridObjectType.Path)
+            else if(gridObject.terrainType == TerrainType.Plate)
             {
                 text_style.normal.textColor = Color.white;
                 Handles.Label(cell_center, $"({current_cell.X}, {current_cell.Y})", text_style);
             }
-            else if(gridObject.type == GridObjectType.Chamber)
+            else if(gridObject.terrainType == TerrainType.Slope)
             {
-                text_style.normal.textColor = Color.red;
+                text_style.normal.textColor = Color.green;
                 Handles.Label(cell_center, $"({current_cell.X}, {current_cell.Y})", text_style);
+            }
+            else if(gridObject.terrainType == TerrainType.None)
+            {
+                text_style.normal.textColor = Color.gray;
+                Handles.Label(cell_center, "None", text_style);
             }
                 
         }
