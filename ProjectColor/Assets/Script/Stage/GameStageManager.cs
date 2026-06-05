@@ -267,7 +267,13 @@ public class GameStageManager : MonoBehaviour
     {
         if(currentStage == stage && stage != GameStage.Settlement) return;
 
+        GameStage previousStage = currentStage;
         currentStage = stage;
+        if(previousStage == GameStage.Deployment && stage != GameStage.Deployment)
+        {
+            UnitDeployAreaHighlighter.HideAll();
+        }
+
         if(stage == GameStage.Deployment)
         {
             EnsureSceneUI();

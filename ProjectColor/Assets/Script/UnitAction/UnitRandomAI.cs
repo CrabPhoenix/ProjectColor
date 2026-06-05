@@ -8,7 +8,6 @@ using UnityEngine;
 [RequireComponent(typeof(UnitMover))]
 public class UnitRandomAI : MonoBehaviour
 {
-    private readonly SwordAction swordAction = new SwordAction();
     private Unit unit;
     private UnitMover unitMover;
 
@@ -69,11 +68,12 @@ public class UnitRandomAI : MonoBehaviour
     {
         if(!CanUnitAct()) return false;
 
-        List<Unit> targets = swordAction.GetAttackableTargets(unit);
+        UnitAttackSkillType selectedSkill = UnitAttackSkillType.Sword;
+        List<Unit> targets = GetAttackableTargets(out selectedSkill);
         if(targets.Count == 0) return false;
 
         Unit target = GetPreferredTarget(targets);
-        return CombatResolver.ExecuteCombat(unit, target, UnitAttackSkillType.Sword);
+        return CombatResolver.ExecuteCombat(unit, target, selectedSkill);
     }
 
     /// <summary>
@@ -139,6 +139,7 @@ public class UnitRandomAI : MonoBehaviour
     private bool CanAttackAnyTargetFromCell(GridCell actorCell)
     {
         Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        List<UnitAttackSkillType> attackSkills = UnitAttackSkillSet.GetSkills(unit);
         foreach(Unit target in allUnits)
         {
             if(target == null || !target.IsAlive) continue;
@@ -147,10 +148,69 @@ public class UnitRandomAI : MonoBehaviour
                 target.UnitMover.RefreshCurrentCell();
             }
 
-            if(swordAction.CanAttackFromCell(unit, actorCell, target))
+            foreach(UnitAttackSkillType attackSkill in attackSkills)
             {
-                return true;
+                if(CanAttackFromCell(attackSkill, actorCell, target))
+                {
+                    return true;
+                }
             }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 获得当前 AI 可以用已配置技能攻击到的全部目标。
+    /// </summary>
+    private List<Unit> GetAttackableTargets(out UnitAttackSkillType selectedSkill)
+    {
+        selectedSkill = UnitAttackSkillType.Sword;
+        List<Unit> targets = new List<Unit>();
+        List<UnitAttackSkillType> attackSkills = UnitAttackSkillSet.GetSkills(unit);
+        Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+
+        foreach(UnitAttackSkillType attackSkill in attackSkills)
+        {
+            AttackActionBase attackAction = CombatResolver.GetAttackAction(attackSkill);
+            if(attackAction == null) continue;
+
+            foreach(Unit target in allUnits)
+            {
+                if(target == null || !target.IsAlive) continue;
+                if(!attackAction.CanExecute(unit, target)) continue;
+
+                targets.Add(target);
+            }
+
+            if(targets.Count > 0)
+            {
+                selectedSkill = attackSkill;
+                return targets;
+            }
+        }
+
+        return targets;
+    }
+
+    /// <summary>
+    /// 判断指定技能是否能从某个格子攻击目标。
+    /// </summary>
+    private bool CanAttackFromCell(UnitAttackSkillType attackSkill, GridCell actorCell, Unit target)
+    {
+        if(attackSkill == UnitAttackSkillType.Sword)
+        {
+            return ((SwordAction)CombatResolver.GetAttackAction(attackSkill)).CanAttackFromCell(unit, actorCell, target);
+        }
+
+        if(attackSkill == UnitAttackSkillType.Bow)
+        {
+            return ((BowAction)CombatResolver.GetAttackAction(attackSkill)).CanAttackFromCell(unit, actorCell, target);
+        }
+
+        if(attackSkill == UnitAttackSkillType.Hammer)
+        {
+            return ((HammerAction)CombatResolver.GetAttackAction(attackSkill)).CanAttackFromCell(unit, actorCell, target);
         }
 
         return false;

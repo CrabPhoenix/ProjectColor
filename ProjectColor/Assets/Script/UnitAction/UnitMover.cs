@@ -33,6 +33,7 @@ public class UnitMover : MonoBehaviour
         RefreshCurrentCell();
         SnapToCurrentCellCenter();
         UnitGridOccupancy.RegisterUnit(unit, currentCell);
+        ResolveCurrentTerrainEffect();
     }
 
     /// <summary>
@@ -152,6 +153,25 @@ public class UnitMover : MonoBehaviour
     }
 
     /// <summary>
+    /// 强制将单位移动到指定格子，用于击退等不走普通移动校验的效果。
+    /// </summary>
+    public bool TryForceMoveToCell(GridCell targetCell)
+    {
+        if(GridManager.Instance == null || unit == null) return false;
+        if(!GridManager.Instance.IsValidCell(targetCell)) return false;
+
+        RefreshCurrentCell();
+        if(!UnitGridOccupancy.MoveUnit(unit, currentCell, targetCell)) return false;
+
+        currentCell = targetCell;
+        StopAllCoroutines();
+        isMoving = false;
+        transform.position = GridManager.Instance.GetWorldInGrid(currentCell);
+        ResolveCurrentTerrainEffect();
+        return true;
+    }
+
+    /// <summary>
     /// 通过当前位置刷新当前格子坐标。
     /// </summary>
     public void RefreshCurrentCell()
@@ -212,6 +232,7 @@ public class UnitMover : MonoBehaviour
         }
 
         isMoving = false;
+        ResolveCurrentTerrainEffect();
     }
 
     /// <summary>
@@ -226,5 +247,24 @@ public class UnitMover : MonoBehaviour
         }
 
         transform.position = targetPosition;
+    }
+
+    /// <summary>
+    /// 根据当前所在地形结算进入格子的即时效果。
+    /// </summary>
+    private void ResolveCurrentTerrainEffect()
+    {
+        if(GridManager.Instance == null || unit == null || !unit.IsAlive) return;
+        if(GridManager.Instance.GetTerrainType(currentCell) != TerrainType.Water) return;
+
+        UnitHealth health = unit.Health != null ? unit.Health : GetComponent<UnitHealth>();
+        if(health != null)
+        {
+            health.SetCurrentHealth(0);
+            return;
+        }
+
+        unit.SetAlive(false);
+        gameObject.SetActive(false);
     }
 }

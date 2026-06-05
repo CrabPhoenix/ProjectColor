@@ -12,6 +12,9 @@ public class GameConfigProvider : MonoBehaviour
     private const int DefaultBowDamage = 50;
     private const int DefaultBowMinRange = 2;
     private const int DefaultBowMaxRange = 3;
+    private const int DefaultHammerDamage = 30;
+    private const int DefaultHammerRange = 1;
+    private const int DefaultHammerPushDistance = 1;
     private const float DefaultFrontDamageMultiplier = 1f;
     private const float DefaultSideDamageMultiplier = 1.5f;
     private const float DefaultBackDamageMultiplier = 2f;
@@ -21,6 +24,7 @@ public class GameConfigProvider : MonoBehaviour
     [SerializeField] private UnitStatsConfig unitStatsConfig;
     [SerializeField] private SwordAttackConfig swordAttackConfig;
     [SerializeField] private BowAttackConfig bowAttackConfig;
+    [SerializeField] private HammerAttackConfig hammerAttackConfig;
     [SerializeField] private UnitFacingDamageConfig unitFacingDamageConfig;
 
     /// <summary>
@@ -110,6 +114,33 @@ public class GameConfigProvider : MonoBehaviour
     }
 
     /// <summary>
+    /// 获取 Hammer 攻击伤害。
+    /// </summary>
+    public static int GetHammerDamage()
+    {
+        HammerAttackConfig config = GetHammerAttackConfig();
+        return config != null ? config.Damage : DefaultHammerDamage;
+    }
+
+    /// <summary>
+    /// 获取 Hammer 攻击最大范围。
+    /// </summary>
+    public static int GetHammerRange()
+    {
+        HammerAttackConfig config = GetHammerAttackConfig();
+        return config != null ? config.Range : DefaultHammerRange;
+    }
+
+    /// <summary>
+    /// 获取 Hammer 推动目标的格子数。
+    /// </summary>
+    public static int GetHammerPushDistance()
+    {
+        HammerAttackConfig config = GetHammerAttackConfig();
+        return config != null ? config.PushDistance : DefaultHammerPushDistance;
+    }
+
+    /// <summary>
     /// 获得指定受击方位对应的伤害倍率。
     /// </summary>
     public static float GetFacingDamageMultiplier(UnitFacingSide facingSide)
@@ -151,6 +182,15 @@ public class GameConfigProvider : MonoBehaviour
     {
         GameConfigProvider provider = ResolveProvider();
         return provider != null ? provider.bowAttackConfig : null;
+    }
+
+    /// <summary>
+    /// 获取 Hammer 攻击配置。
+    /// </summary>
+    private static HammerAttackConfig GetHammerAttackConfig()
+    {
+        GameConfigProvider provider = ResolveProvider();
+        return provider != null ? provider.hammerAttackConfig : null;
     }
 
     /// <summary>
@@ -201,6 +241,11 @@ public class GameConfigProvider : MonoBehaviour
         if(bowAttackConfig == null)
         {
             bowAttackConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<BowAttackConfig>("Assets/Config/Attack/BowAttackConfig.asset");
+        }
+
+        if(hammerAttackConfig == null)
+        {
+            hammerAttackConfig = UnityEditor.AssetDatabase.LoadAssetAtPath<HammerAttackConfig>("Assets/Config/Attack/HammerAttackConfig.asset");
         }
 
         if(unitFacingDamageConfig == null)

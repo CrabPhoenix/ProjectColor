@@ -4,5 +4,6 @@
 public enum UnitAttackSkillType
 {
     Sword,
-    Bow
+    Bow,
+    Hammer
 }

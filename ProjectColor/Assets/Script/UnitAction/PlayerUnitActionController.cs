@@ -20,6 +20,7 @@ public class PlayerUnitActionController : MonoBehaviour
 
     private readonly SwordAction swordAction = new SwordAction();
     private readonly BowAction bowAction = new BowAction();
+    private readonly HammerAction hammerAction = new HammerAction();
     private readonly ConvertNeutralAction convertNeutralAction = new ConvertNeutralAction();
     private readonly WaitAction waitAction = new WaitAction();
     private Unit selectedUnit;
@@ -197,6 +198,12 @@ public class PlayerUnitActionController : MonoBehaviour
             return true;
         }
 
+        if(selectedAction == PlayerUnitActionType.Hammer)
+        {
+            TryExecuteHammer(worldPosition);
+            return true;
+        }
+
         if(selectedAction == PlayerUnitActionType.ConvertNeutral)
         {
             TryExecuteConvertNeutral(worldPosition);
@@ -234,6 +241,12 @@ public class PlayerUnitActionController : MonoBehaviour
         if(actionType == PlayerUnitActionType.Bow)
         {
             SelectBowAction();
+            return;
+        }
+
+        if(actionType == PlayerUnitActionType.Hammer)
+        {
+            SelectHammerAction();
             return;
         }
 
@@ -312,6 +325,28 @@ public class PlayerUnitActionController : MonoBehaviour
     }
 
     /// <summary>
+    /// 选择 Hammer 行动并显示自身格黄色边框与红色攻击范围。
+    /// </summary>
+    private void SelectHammerAction()
+    {
+        if(!UnitAttackSkillSet.HasSkill(selectedUnit, UnitAttackSkillType.Hammer)) return;
+
+        selectedAction = PlayerUnitActionType.Hammer;
+        HideMoveRange();
+        interactionRangeHighlighter.ClearInteractionRange();
+
+        if(selectedUnit != null)
+        {
+            selectedUnit.UnitMover.RefreshCurrentCell();
+            actionCellHighlighter.ShowAttackCell(selectedUnit.CurrentCell);
+        }
+
+        attackRangeHighlighter.ShowAttackRange(selectedUnit, hammerAction);
+        actionMenu.SetSelectedAction(selectedAction);
+        HideMenuOnly();
+    }
+
+    /// <summary>
     /// 选择转化中立单位互动并显示可转化目标范围。
     /// </summary>
     private void SelectConvertNeutralAction()
@@ -369,6 +404,19 @@ public class PlayerUnitActionController : MonoBehaviour
         if(!UnitGridOccupancy.TryGetUnit(targetCell, out Unit target)) return;
 
         ShowCombatPreview(target, UnitAttackSkillType.Bow);
+    }
+
+    /// <summary>
+    /// 尝试对点击格子上的单位显示 Hammer 战斗预览。
+    /// </summary>
+    private void TryExecuteHammer(Vector3 worldPosition)
+    {
+        if(GridManager.Instance == null) return;
+
+        GridCell targetCell = GridManager.Instance.GetCellFromWorldPosition(worldPosition);
+        if(!UnitGridOccupancy.TryGetUnit(targetCell, out Unit target)) return;
+
+        ShowCombatPreview(target, UnitAttackSkillType.Hammer);
     }
 
     /// <summary>
@@ -653,7 +701,7 @@ public class PlayerUnitActionController : MonoBehaviour
     /// </summary>
     private bool IsTargetingAttack()
     {
-        return selectedAction == PlayerUnitActionType.Sword || selectedAction == PlayerUnitActionType.Bow;
+        return selectedAction == PlayerUnitActionType.Sword || selectedAction == PlayerUnitActionType.Bow || selectedAction == PlayerUnitActionType.Hammer;
     }
 
     /// <summary>
@@ -663,6 +711,7 @@ public class PlayerUnitActionController : MonoBehaviour
     {
         if(selectedAction == PlayerUnitActionType.Sword) return swordAction.CanExecute(selectedUnit, target);
         if(selectedAction == PlayerUnitActionType.Bow) return bowAction.CanExecute(selectedUnit, target);
+        if(selectedAction == PlayerUnitActionType.Hammer) return hammerAction.CanExecute(selectedUnit, target);
 
         return false;
     }

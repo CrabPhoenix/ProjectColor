@@ -16,16 +16,19 @@ public class PlayerUnitActionMenu : MonoBehaviour
     private Button attackButton;
     private Button swordButton;
     private Button bowButton;
+    private Button hammerButton;
     private Button interactionButton;
     private Button waitButton;
     private Text attackText;
     private Text swordText;
     private Text bowText;
+    private Text hammerText;
     private Text interactionText;
     private Text waitText;
     private Outline attackOutline;
     private Outline swordOutline;
     private Outline bowOutline;
+    private Outline hammerOutline;
     private Outline interactionOutline;
     private Outline waitOutline;
     private Unit targetUnit;
@@ -102,20 +105,23 @@ public class PlayerUnitActionMenu : MonoBehaviour
     /// </summary>
     public void SetSelectedAction(PlayerUnitActionType selectedAction)
     {
-        bool isAttackSelected = selectedAction == PlayerUnitActionType.Attack || selectedAction == PlayerUnitActionType.Sword || selectedAction == PlayerUnitActionType.Bow;
+        bool isAttackSelected = selectedAction == PlayerUnitActionType.Attack || selectedAction == PlayerUnitActionType.Sword || selectedAction == PlayerUnitActionType.Bow || selectedAction == PlayerUnitActionType.Hammer;
         bool isSwordSelected = selectedAction == PlayerUnitActionType.Sword;
         bool isBowSelected = selectedAction == PlayerUnitActionType.Bow;
+        bool isHammerSelected = selectedAction == PlayerUnitActionType.Hammer;
         bool isInteractionSelected = selectedAction == PlayerUnitActionType.Interaction || selectedAction == PlayerUnitActionType.ConvertNeutral;
         bool isWaitSelected = selectedAction == PlayerUnitActionType.Wait;
 
         if(attackText != null) attackText.color = isAttackSelected ? Color.yellow : Color.white;
         if(swordText != null) swordText.color = isSwordSelected ? Color.yellow : Color.white;
         if(bowText != null) bowText.color = isBowSelected ? Color.yellow : Color.white;
+        if(hammerText != null) hammerText.color = isHammerSelected ? Color.yellow : Color.white;
         if(interactionText != null) interactionText.color = isInteractionSelected ? Color.yellow : Color.white;
         if(waitText != null) waitText.color = isWaitSelected ? Color.yellow : Color.white;
         if(attackOutline != null) attackOutline.enabled = isAttackSelected;
         if(swordOutline != null) swordOutline.enabled = isSwordSelected;
         if(bowOutline != null) bowOutline.enabled = isBowSelected;
+        if(hammerOutline != null) hammerOutline.enabled = isHammerSelected;
         if(interactionOutline != null) interactionOutline.enabled = isInteractionSelected;
         if(waitOutline != null) waitOutline.enabled = isWaitSelected;
         if(attackSubmenuRect != null) attackSubmenuRect.gameObject.SetActive(isAttackSelected);
@@ -188,6 +194,10 @@ public class PlayerUnitActionMenu : MonoBehaviour
         bowButton = CreateButton(attackSubmenuRect, "Bow", "Bow", new Vector2(0f, -18f), new Vector2(76f, 28f), out bowText);
         bowOutline = CreateSelectedOutline(bowButton.gameObject);
         bowButton.onClick.AddListener(() => onActionSelected?.Invoke(PlayerUnitActionType.Bow));
+
+        hammerButton = CreateButton(attackSubmenuRect, "Hammer", "Hammer", new Vector2(0f, -54f), new Vector2(76f, 28f), out hammerText);
+        hammerOutline = CreateSelectedOutline(hammerButton.gameObject);
+        hammerButton.onClick.AddListener(() => onActionSelected?.Invoke(PlayerUnitActionType.Hammer));
         attackSubmenuRect.gameObject.SetActive(false);
     }
 
@@ -198,6 +208,7 @@ public class PlayerUnitActionMenu : MonoBehaviour
     {
         bool hasSword = UnitAttackSkillSet.HasSkill(targetUnit, UnitAttackSkillType.Sword);
         bool hasBow = UnitAttackSkillSet.HasSkill(targetUnit, UnitAttackSkillType.Bow);
+        bool hasHammer = UnitAttackSkillSet.HasSkill(targetUnit, UnitAttackSkillType.Hammer);
 
         if(swordButton != null)
         {
@@ -209,6 +220,11 @@ public class PlayerUnitActionMenu : MonoBehaviour
             bowButton.gameObject.SetActive(hasBow);
         }
 
+        if(hammerButton != null)
+        {
+            hammerButton.gameObject.SetActive(hasHammer);
+        }
+
         LayoutAttackSkillButtons();
     }
 
@@ -217,7 +233,7 @@ public class PlayerUnitActionMenu : MonoBehaviour
     /// </summary>
     private void LayoutAttackSkillButtons()
     {
-        Button[] skillButtons = { swordButton, bowButton };
+        Button[] skillButtons = { swordButton, bowButton, hammerButton };
         int visibleCount = 0;
         foreach(Button button in skillButtons)
         {
@@ -229,7 +245,7 @@ public class PlayerUnitActionMenu : MonoBehaviour
 
         if(attackSubmenuRect != null)
         {
-            attackSubmenuRect.sizeDelta = visibleCount <= 1 ? new Vector2(96f, 40f) : new Vector2(96f, 76f);
+            attackSubmenuRect.sizeDelta = visibleCount <= 1 ? new Vector2(96f, 40f) : new Vector2(96f, 4f + 36f * visibleCount);
         }
 
         int visibleIndex = 0;
@@ -240,7 +256,7 @@ public class PlayerUnitActionMenu : MonoBehaviour
             RectTransform buttonRect = button.GetComponent<RectTransform>();
             if(buttonRect != null)
             {
-                float y = visibleCount <= 1 ? 0f : 18f - 36f * visibleIndex;
+                float y = visibleCount <= 1 ? 0f : 18f * (visibleCount - 1) - 36f * visibleIndex;
                 buttonRect.anchoredPosition = new Vector2(0f, y);
             }
 
@@ -320,7 +336,7 @@ public class PlayerUnitActionMenu : MonoBehaviour
         if(panelRect == null || !panelRect.gameObject.activeSelf) return;
 
         float width = panelRect.rect.width / 2;
-        bool attackSubmenuVisible = selectedAction == PlayerUnitActionType.Attack || selectedAction == PlayerUnitActionType.Sword || selectedAction == PlayerUnitActionType.Bow;
+        bool attackSubmenuVisible = selectedAction == PlayerUnitActionType.Attack || selectedAction == PlayerUnitActionType.Sword || selectedAction == PlayerUnitActionType.Bow || selectedAction == PlayerUnitActionType.Hammer;
         if(attackSubmenuVisible && attackSubmenuRect != null)
         {
             width += attackSubmenuRect.rect.width;

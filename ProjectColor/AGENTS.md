@@ -27,3 +27,8 @@
 
 - 所有与格子坐标相关的配置、编辑器校验和运行时代码，都必须使用非负整数坐标。
 - 当用户或 Inspector 输入负数格子坐标时，应在合理位置自动修正、拒绝或移除，避免负数坐标进入运行时逻辑。
+
+## 单位配置规则
+
+- `Assets/Config/DefaultUnitStatsConfig.asset` 中的单位属性配置必须放入对应阵营列表：玩家单位放入 `playerUnitStats`，敌方单位放入 `enemyUnitStats`，中立单位放入 `neutralUnitStats`，友方单位放入 `allyUnitStats`。
+- 以后新增或改造单位 prefab 时，必须同步检查该 prefab 的 `Unit.Team` 与 `DefaultUnitStatsConfig.asset` 所在列表是否一致。

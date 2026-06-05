@@ -7,6 +7,7 @@ public static class CombatResolver
 {
     private static readonly SwordAction swordAction = new SwordAction();
     private static readonly BowAction bowAction = new BowAction();
+    private static readonly HammerAction hammerAction = new HammerAction();
 
     /// <summary>
     /// 尝试生成战斗预览数据。
@@ -23,7 +24,9 @@ public static class CombatResolver
         UnitAttackSkillType counterSkill = UnitAttackMemory.GetCounterSkill(defender);
 
         UnitHealth defenderHealth = defender != null ? defender.GetComponent<UnitHealth>() : null;
-        bool defenderSurvives = defenderHealth != null && defenderHealth.CurrentHealth > attackDamage;
+        bool defenderSurvivesDamage = defenderHealth != null && defenderHealth.CurrentHealth > attackDamage;
+        bool defenderDiesFromPostEffect = defenderSurvivesDamage && attackAction.WillTargetDieFromPostDamageEffect(attacker, defender, attackDamage);
+        bool defenderSurvives = defenderSurvivesDamage && !defenderDiesFromPostEffect;
         if(defenderSurvives && CanCounter(defender, attacker, counterSkill))
         {
             AttackActionBase counterAction = GetAttackAction(counterSkill);
@@ -77,6 +80,8 @@ public static class CombatResolver
                 return swordAction;
             case UnitAttackSkillType.Bow:
                 return bowAction;
+            case UnitAttackSkillType.Hammer:
+                return hammerAction;
             default:
                 return swordAction;
         }
@@ -102,6 +107,11 @@ public static class CombatResolver
         if(counterSkill == UnitAttackSkillType.Bow)
         {
             return bowAction.CanAttackFromCell(defender, defender.CurrentCell, attacker);
+        }
+
+        if(counterSkill == UnitAttackSkillType.Hammer)
+        {
+            return hammerAction.CanAttackFromCell(defender, defender.CurrentCell, attacker);
         }
 
         return false;

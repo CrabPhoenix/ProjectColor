@@ -19,15 +19,36 @@ MonoBehaviour:
   - unitPrefab: {fileID: 800100000001, guid: b28229a8a62fb9843bbaba12f6d4c972, type: 3}
     maxHealth: 100
     moveRange: 2
+  - unitPrefab: {fileID: 800100000001, guid: 0329128b1c54d65449b1d89d65ead9af, type: 3}
+    maxHealth: 100
+    moveRange: 2
   enemyUnitStats:
   - unitPrefab: {fileID: 800200000001, guid: db2bb2299309cfd4a9253dd11b9e03e0, type: 3}
+    maxHealth: 200
+    moveRange: 2
+  - unitPrefab: {fileID: 800200000001, guid: 5ba4adf4cf2446baa657d37f571d1011, type: 3}
+    maxHealth: 100
+    moveRange: 2
+  - unitPrefab: {fileID: 800200000001, guid: 2eb74a2f7b2b4df898a6dc5ad626afb1, type: 3}
     maxHealth: 100
     moveRange: 2
   neutralUnitStats:
   - unitPrefab: {fileID: 800300000001, guid: 1ecff609d16bab7488266e8a1a4c6f91, type: 3}
     maxHealth: 100
     moveRange: 2
+  - unitPrefab: {fileID: 800300000001, guid: 9d632558a4a04d769d8114eec2da4a21, type: 3}
+    maxHealth: 100
+    moveRange: 2
+  - unitPrefab: {fileID: 800300000001, guid: ac344ad7bb5841fd83e8dd732473b248, type: 3}
+    maxHealth: 200
+    moveRange: 2
   allyUnitStats:
   - unitPrefab: {fileID: 800300000001, guid: 489c621f566ccff4382e719f8e8110c1, type: 3}
+    maxHealth: 100
+    moveRange: 2
+  - unitPrefab: {fileID: 800300000001, guid: c7a9b611e9d24ba6979b17cfbcfe9212, type: 3}
+    maxHealth: 200
+    moveRange: 2
+  - unitPrefab: {fileID: 800300000001, guid: 6cc901a4fc924893a74f225f15ae27dd, type: 3}
     maxHealth: 100
     moveRange: 2

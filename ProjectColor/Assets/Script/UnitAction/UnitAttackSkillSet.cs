@@ -39,6 +39,20 @@ public class UnitAttackSkillSet : MonoBehaviour
     }
 
     /// <summary>
+    /// 获得单位当前配置的全部攻击技能。
+    /// </summary>
+    public static List<UnitAttackSkillType> GetSkills(Unit unit)
+    {
+        UnitAttackSkillSet skillSet = unit != null ? unit.GetComponent<UnitAttackSkillSet>() : null;
+        if(skillSet == null || skillSet.attackSkills == null || skillSet.attackSkills.Count == 0)
+        {
+            return new List<UnitAttackSkillType> { UnitAttackSkillType.Sword };
+        }
+
+        return new List<UnitAttackSkillType>(skillSet.attackSkills);
+    }
+
+    /// <summary>
     /// 在 Inspector 修改时移除重复技能。
     /// </summary>
     private void OnValidate()

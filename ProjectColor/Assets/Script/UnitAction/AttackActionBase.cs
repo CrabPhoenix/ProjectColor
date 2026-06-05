@@ -21,7 +21,7 @@ public abstract class AttackActionBase : UnitActionBase
     /// <summary>
     /// 对目标造成该攻击的伤害，可选择是否消耗行动。
     /// </summary>
-    public bool DealDamage(Unit actor, Unit target, bool consumeAction)
+    public virtual bool DealDamage(Unit actor, Unit target, bool consumeAction)
     {
         if(actor == null || target == null) return false;
 
@@ -49,6 +49,14 @@ public abstract class AttackActionBase : UnitActionBase
         if(targetHealth == null) return 0;
 
         return targetHealth.CalculateDamage(new DamageInfo(actor, target, Damage, ActionName));
+    }
+
+    /// <summary>
+    /// 预判目标在受到伤害后的附加效果中是否会死亡。
+    /// </summary>
+    public virtual bool WillTargetDieFromPostDamageEffect(Unit actor, Unit target, int previewDamage)
+    {
+        return false;
     }
 
     /// <summary>

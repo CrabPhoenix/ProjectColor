@@ -20,6 +20,23 @@ public class UnitDeployAreaHighlighter : MonoBehaviour
     private bool isVisible;
 
     /// <summary>
+    /// 隐藏当前场景中所有部署范围高亮，避免部署 UI 被关闭后残留显示。
+    /// </summary>
+    public static void HideAll()
+    {
+        UnitDeployAreaHighlighter[] highlighters = Resources.FindObjectsOfTypeAll<UnitDeployAreaHighlighter>();
+        foreach(UnitDeployAreaHighlighter highlighter in highlighters)
+        {
+            if(highlighter == null) continue;
+            if(!highlighter.gameObject.scene.IsValid()) continue;
+
+            highlighter.Hide();
+        }
+
+        ClearOrphanHighlightRoots();
+    }
+
+    /// <summary>
     /// 销毁时清理部署范围高亮根物体。
     /// </summary>
     private void OnDestroy()
@@ -119,6 +136,29 @@ public class UnitDeployAreaHighlighter : MonoBehaviour
         }
 
         cellObjects.Clear();
+    }
+
+    /// <summary>
+    /// 清理可能因为部署面板被禁用而遗留在场景中的高亮根物体。
+    /// </summary>
+    private static void ClearOrphanHighlightRoots()
+    {
+        GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+        foreach(GameObject sceneObject in allObjects)
+        {
+            if(sceneObject == null) continue;
+            if(sceneObject.name != "UnitDeployAreaHighlights") continue;
+            if(!sceneObject.scene.IsValid()) continue;
+
+            if(Application.isPlaying)
+            {
+                Destroy(sceneObject);
+            }
+            else
+            {
+                DestroyImmediate(sceneObject);
+            }
+        }
     }
 
     /// <summary>
