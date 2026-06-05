@@ -7,6 +7,7 @@ using UnityEngine;
 public class BowAction : AttackActionBase
 {
     public override string ActionName => "Bow";
+    public override UnitAttackSkillType SkillType => UnitAttackSkillType.Bow;
     public override int Damage => GameConfigProvider.GetBowDamage();
     private int MinRange => GameConfigProvider.GetBowMinRange();
     private int MaxRange => GameConfigProvider.GetBowMaxRange();

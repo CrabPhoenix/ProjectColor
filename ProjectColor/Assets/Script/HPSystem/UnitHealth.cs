@@ -43,7 +43,7 @@ public class UnitHealth : MonoBehaviour
         if(unit == null || !unit.IsAlive) return;
         if(damageInfo.Damage <= 0) return;
 
-        int finalDamage = GetFacingModifiedDamage(damageInfo);
+        int finalDamage = CalculateDamage(damageInfo);
         currentHealth = Mathf.Max(0, currentHealth - finalDamage);
         OnHealthChanged?.Invoke(this);
 
@@ -56,6 +56,16 @@ public class UnitHealth : MonoBehaviour
     /// <summary>
     /// 根据攻击来源相对当前单位朝向的位置修正最终伤害。
     /// </summary>
+    /// <summary>
+    /// 根据当前朝向倍率预览最终会受到的伤害。
+    /// </summary>
+    public int CalculateDamage(DamageInfo damageInfo)
+    {
+        if(damageInfo.Damage <= 0) return 0;
+
+        return GetFacingModifiedDamage(damageInfo);
+    }
+
     private int GetFacingModifiedDamage(DamageInfo damageInfo)
     {
         if(unit == null || unit.Facing == null || damageInfo.Attacker == null) return damageInfo.Damage;

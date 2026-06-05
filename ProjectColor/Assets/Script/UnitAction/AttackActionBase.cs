@@ -5,6 +5,7 @@ using UnityEngine;
 /// </summary>
 public abstract class AttackActionBase : UnitActionBase
 {
+    public abstract UnitAttackSkillType SkillType { get; }
     public abstract int Damage { get; }
 
     /// <summary>
@@ -14,13 +15,40 @@ public abstract class AttackActionBase : UnitActionBase
     {
         if(!CanExecute(actor, target)) return false;
 
+        return DealDamage(actor, target, true);
+    }
+
+    /// <summary>
+    /// 对目标造成该攻击的伤害，可选择是否消耗行动。
+    /// </summary>
+    public bool DealDamage(Unit actor, Unit target, bool consumeAction)
+    {
+        if(actor == null || target == null) return false;
+
         UnitHealth targetHealth = target.GetComponent<UnitHealth>();
         if(targetHealth == null) return false;
 
         FaceAttackTarget(actor, target);
         targetHealth.TakeDamage(new DamageInfo(actor, target, Damage, ActionName));
-        MarkActionConsumed(actor);
+        if(consumeAction)
+        {
+            MarkActionConsumed(actor);
+        }
+
         return true;
+    }
+
+    /// <summary>
+    /// 预览该攻击对目标造成的最终伤害。
+    /// </summary>
+    public int PreviewDamage(Unit actor, Unit target)
+    {
+        if(actor == null || target == null) return 0;
+
+        UnitHealth targetHealth = target.GetComponent<UnitHealth>();
+        if(targetHealth == null) return 0;
+
+        return targetHealth.CalculateDamage(new DamageInfo(actor, target, Damage, ActionName));
     }
 
     /// <summary>

@@ -7,6 +7,7 @@ using UnityEngine;
 public class SwordAction : AttackActionBase
 {
     public override string ActionName => "Sword";
+    public override UnitAttackSkillType SkillType => UnitAttackSkillType.Sword;
     public override int Damage => GameConfigProvider.GetSwordDamage();
     private int Range => GameConfigProvider.GetSwordRange();
 

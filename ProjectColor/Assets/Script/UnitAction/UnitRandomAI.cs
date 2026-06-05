@@ -73,7 +73,7 @@ public class UnitRandomAI : MonoBehaviour
         if(targets.Count == 0) return false;
 
         Unit target = GetPreferredTarget(targets);
-        return swordAction.Execute(unit, target);
+        return CombatResolver.ExecuteCombat(unit, target, UnitAttackSkillType.Sword);
     }
 
     /// <summary>

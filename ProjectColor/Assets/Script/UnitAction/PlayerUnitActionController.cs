@@ -14,6 +14,7 @@ public class PlayerUnitActionController : MonoBehaviour
     [SerializeField] private PlayerActionCellHighlighter actionCellHighlighter;
     [SerializeField] private PlayerMoveRangeHighlighter moveRangeHighlighter;
     [SerializeField] private UnitAttackDirectionPreview attackDirectionPreview;
+    [SerializeField] private CombatPreviewUI combatPreviewUI;
     [SerializeField] private Camera targetCamera;
     [SerializeField] private GameObject playerUnitPrefab;
 
@@ -23,6 +24,7 @@ public class PlayerUnitActionController : MonoBehaviour
     private readonly WaitAction waitAction = new WaitAction();
     private Unit selectedUnit;
     private PlayerUnitActionType selectedAction = PlayerUnitActionType.None;
+    private CombatPreviewData currentCombatPreview;
     private bool subscribedPhaseEvent;
 
     public bool HasSelectedUnit => selectedUnit != null;
@@ -45,6 +47,8 @@ public class PlayerUnitActionController : MonoBehaviour
         if(moveRangeHighlighter == null) moveRangeHighlighter = GetComponent<PlayerMoveRangeHighlighter>();
         if(attackDirectionPreview == null) attackDirectionPreview = GetComponent<UnitAttackDirectionPreview>();
         if(attackDirectionPreview == null) attackDirectionPreview = gameObject.AddComponent<UnitAttackDirectionPreview>();
+        if(combatPreviewUI == null) combatPreviewUI = GetComponent<CombatPreviewUI>();
+        if(combatPreviewUI == null) combatPreviewUI = gameObject.AddComponent<CombatPreviewUI>();
         ResolveTargetCamera();
         ResolvePlayerUnitPrefab();
         convertNeutralAction.SetPlayerUnitPrefab(playerUnitPrefab);
@@ -55,6 +59,7 @@ public class PlayerUnitActionController : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        RefreshCombatPreviewLifeState();
         RefreshAttackDirectionPreview();
     }
 
@@ -113,6 +118,7 @@ public class PlayerUnitActionController : MonoBehaviour
     {
         selectedUnit = null;
         selectedAction = PlayerUnitActionType.None;
+        HideCombatPreview();
         ClearActionHighlights();
         actionMenu.Hide();
     }
@@ -153,6 +159,12 @@ public class PlayerUnitActionController : MonoBehaviour
     public bool HandleRightClick()
     {
         if(selectedUnit == null) return false;
+
+        if(combatPreviewUI != null && combatPreviewUI.IsVisible)
+        {
+            CancelCombatPreview();
+            return true;
+        }
 
         if(selectedAction != PlayerUnitActionType.None)
         {
@@ -343,10 +355,7 @@ public class PlayerUnitActionController : MonoBehaviour
         GridCell targetCell = GridManager.Instance.GetCellFromWorldPosition(worldPosition);
         if(!UnitGridOccupancy.TryGetUnit(targetCell, out Unit target)) return;
 
-        if(swordAction.Execute(selectedUnit, target))
-        {
-            ClearAfterAction();
-        }
+        ShowCombatPreview(target, UnitAttackSkillType.Sword);
     }
 
     /// <summary>
@@ -359,9 +368,88 @@ public class PlayerUnitActionController : MonoBehaviour
         GridCell targetCell = GridManager.Instance.GetCellFromWorldPosition(worldPosition);
         if(!UnitGridOccupancy.TryGetUnit(targetCell, out Unit target)) return;
 
-        if(bowAction.Execute(selectedUnit, target))
+        ShowCombatPreview(target, UnitAttackSkillType.Bow);
+    }
+
+    /// <summary>
+    /// 显示指定攻击目标的战斗伤害预览。
+    /// </summary>
+    private void ShowCombatPreview(Unit target, UnitAttackSkillType attackSkill)
+    {
+        if(!CombatResolver.TryBuildPreview(selectedUnit, target, attackSkill, out CombatPreviewData previewData)) return;
+
+        currentCombatPreview = previewData;
+        if(attackDirectionPreview != null)
         {
+            attackDirectionPreview.Clear();
+        }
+
+        if(combatPreviewUI != null)
+        {
+            combatPreviewUI.Show(currentCombatPreview, ConfirmCombatPreview);
+        }
+    }
+
+    /// <summary>
+    /// 确认并执行当前预览中的战斗。
+    /// </summary>
+    private void ConfirmCombatPreview()
+    {
+        if(!currentCombatPreview.IsValid) return;
+
+        if(CombatResolver.ExecuteCombat(currentCombatPreview))
+        {
+            HideCombatPreview();
             ClearAfterAction();
+        }
+    }
+
+    /// <summary>
+    /// 取消伤害预览并回到攻击二级菜单展开状态。
+    /// </summary>
+    private void CancelCombatPreview()
+    {
+        HideCombatPreview();
+        selectedAction = PlayerUnitActionType.Attack;
+        ClearActionHighlights();
+        HideMoveRange();
+        RefreshMenu();
+        actionMenu.SetSelectedAction(PlayerUnitActionType.Attack);
+    }
+
+    /// <summary>
+    /// 隐藏当前伤害预览。
+    /// </summary>
+    private void HideCombatPreview()
+    {
+        currentCombatPreview = default;
+        if(combatPreviewUI != null)
+        {
+            combatPreviewUI.Hide();
+        }
+    }
+
+    /// <summary>
+    /// 当预览中的任意单位死亡或失效时自动隐藏伤害预览。
+    /// </summary>
+    private void RefreshCombatPreviewLifeState()
+    {
+        if(combatPreviewUI == null || !combatPreviewUI.IsVisible) return;
+        if(!currentCombatPreview.IsValid)
+        {
+            HideCombatPreview();
+            return;
+        }
+
+        if(currentCombatPreview.Attacker == null || currentCombatPreview.Defender == null)
+        {
+            HideCombatPreview();
+            return;
+        }
+
+        if(!currentCombatPreview.Attacker.IsAlive || !currentCombatPreview.Defender.IsAlive)
+        {
+            HideCombatPreview();
         }
     }
 
@@ -462,6 +550,13 @@ public class PlayerUnitActionController : MonoBehaviour
     private void RefreshAttackDirectionPreview()
     {
         if(attackDirectionPreview == null) return;
+        if(combatPreviewUI != null && combatPreviewUI.IsVisible)
+        {
+            UnitFacingHoverController.SetSuppressed(false);
+            attackDirectionPreview.Clear();
+            return;
+        }
+
         if(selectedUnit == null || !IsTargetingAttack())
         {
             UnitFacingHoverController.SetSuppressed(false);

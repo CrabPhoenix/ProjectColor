@@ -25,6 +25,20 @@ public class UnitAttackSkillSet : MonoBehaviour
     }
 
     /// <summary>
+    /// 获得单位默认用于回击的攻击技能。
+    /// </summary>
+    public static UnitAttackSkillType GetDefaultSkill(Unit unit)
+    {
+        UnitAttackSkillSet skillSet = unit != null ? unit.GetComponent<UnitAttackSkillSet>() : null;
+        if(skillSet == null || skillSet.attackSkills == null || skillSet.attackSkills.Count == 0)
+        {
+            return UnitAttackSkillType.Sword;
+        }
+
+        return skillSet.attackSkills[0];
+    }
+
+    /// <summary>
     /// 在 Inspector 修改时移除重复技能。
     /// </summary>
     private void OnValidate()
